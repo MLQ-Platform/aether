@@ -98,6 +98,7 @@ class SUEdgeCalculator(EdgeCalculator):
 
             if ps.size == 0:
                 return 0.0
+
             return float(-np.sum(ps * np.log(ps)))
 
         H_A = H_from_probs(np.array([pA1, pA0]))

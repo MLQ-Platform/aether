@@ -1,4 +1,6 @@
 import uuid
+import matplotlib.pyplot as plt
+import networkx as nx
 import pandas as pd
 
 
@@ -7,6 +9,16 @@ def generate_uuid() -> str:
     Generate a unique UUID
     """
     return str(uuid.uuid4())[:8]
+
+
+def draw_graph(graph: nx.Graph):
+    """
+    Draw a nx.Graph graph
+    """
+    pos = nx.spring_layout(graph)
+    plt.figure(figsize=(6, 4))
+    nx.draw(graph, pos, with_labels=True, node_color="lightblue", edge_color="gray")
+    plt.show()
 
 
 def clause_filter(

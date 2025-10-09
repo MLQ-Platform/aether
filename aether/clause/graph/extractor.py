@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 from aether.clause.graph.base import ClauseGraph
 from aether.logger import get_logger
+from aether.utils import generate_uuid
 
 logger = get_logger(__name__)
 
@@ -24,7 +25,7 @@ class SubgraphExtractor:
         cls.RESTART_PROB = restart_prob
         cls.LENGTH_FACTOR = length_factor
 
-    def extract(self, size: int, start_node: str) -> nx.Graph:
+    def extract(self, size: int, start_node: str) -> ClauseGraph:
         """
         Extract subgraph using random walk
         """
@@ -34,7 +35,7 @@ class SubgraphExtractor:
             or size > self.graph.num_nodes
             or start_node not in self.graph.clause_trees
         ):
-            return nx.Graph()
+            raise ValueError("Invalid size or start node")
 
         visited = self._traverse(size, start_node)
         subgraph = self._build(visited)
@@ -61,6 +62,7 @@ class SubgraphExtractor:
             neighbors = [
                 n for n in self.graph.get_neighbors(current) if n not in visited
             ]
+
             if not neighbors:
                 current = start
                 continue
@@ -75,20 +77,22 @@ class SubgraphExtractor:
             else:
                 current = random.choice(neighbors)
 
-            visited.add(current)
+            visited.add(str(current))
 
         logger.info(f"Random walk completed. Final size: {len(visited)}")
         return visited
 
-    def _build(self, nodes: Set[int]) -> nx.Graph:
+    def _build(self, nodes: Set[str]) -> nx.Graph:
         """
         Build NetworkX subgraph from nodes
         """
+        trees = [self.graph.clause_trees[node] for node in nodes]
 
-        subgraph = nx.Graph()
-        subgraph.add_nodes_from(nodes)
+        tree_id = generate_uuid()
+        subgraph = ClauseGraph(tree_id)
+        subgraph.add_clause_trees(trees, nodes)
 
-        node_list = list(nodes)
+        node_list = list(subgraph.clause_trees.keys())
 
         for i, n1 in enumerate(node_list):
             for n2 in node_list[i + 1 :]:

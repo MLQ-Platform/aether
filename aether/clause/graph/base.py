@@ -24,26 +24,41 @@ class ClauseGraph:
     def __repr__(self):
         return f"ClauseGraph({self.num_nodes} nodes)"
 
-    def add_clause_tree(self, tree: ClauseTree) -> int:
+    def add_clause_tree(
+        self,
+        tree: ClauseTree,
+        tree_id: Optional[int] = None,
+    ) -> int:
         """
         ClauseTree를 그래프에 노드로 추가
         """
         if type(tree) is not ClauseTree:
             raise ValueError("tree must be a ClauseTree Type")
 
-        node_id = generate_uuid()
+        if tree_id is None:
+            tree_id = generate_uuid()
 
-        self.graph.add_node(node_id)
-        self.clause_trees[node_id] = tree
+        self.graph.add_node(tree_id)
+        self.clause_trees[tree_id] = tree
 
-        logger.info(f"Added ClauseTree as node id: {node_id}")
-        return node_id
+        logger.info(f"Added ClauseTree as node id: {tree_id}")
+        return tree_id
 
-    def add_clause_trees(self, trees: List[ClauseTree]) -> List[int]:
+    def add_clause_trees(
+        self,
+        trees: List[ClauseTree],
+        tree_ids: Optional[List[int]] = None,
+    ) -> List[int]:
         """
         여러 ClauseTree를 한번에 추가
         """
-        return [self.add_clause_tree(tree) for tree in trees]
+        if tree_ids is None:
+            tree_ids = [None] * len(trees)
+
+        return [
+            self.add_clause_tree(tree, tree_id)
+            for tree, tree_id in zip(trees, tree_ids)
+        ]
 
     def set_edge_calculator(
         self, calculator: Callable[[ClauseTree, ClauseTree], float]
@@ -101,6 +116,13 @@ class ClauseGraph:
         노드 ID에 해당하는 ClauseTree 반환
         """
         return self.clause_trees[node_id]
+
+    def add_edge(self, node_id1: int, node_id2: int, weight: float):
+        """
+        두 노드 사이에 간선 추가
+        """
+        self.graph.add_edge(node_id1, node_id2, weight=weight)
+        logger.info(f"Added edge between {node_id1} and {node_id2}")
 
     @property
     def num_nodes(self) -> int:
