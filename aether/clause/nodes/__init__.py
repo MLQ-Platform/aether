@@ -26,9 +26,7 @@ from aether.clause.nodes.nodes import NewHigh
 from aether.clause.nodes.nodes import NewLow
 from aether.clause.nodes.nodes import PctChange
 from aether.clause.nodes.nodes import PullbackWithinBand
-from aether.clause.nodes.nodes import QuantileRank
 from aether.clause.nodes.nodes import ShiftSign
-from aether.clause.nodes.nodes import SlopeSignChange
 from aether.clause.nodes.nodes import SmallerThan
 from aether.clause.nodes.nodes import UpStreak
 from aether.clause.nodes.nodes import ZBetween
@@ -45,7 +43,6 @@ __all__ = [
     "NewHigh",
     "NewLow",
     "PctChange",
-    "QuantileRank",
     "SHIFT",
     "ShiftSign",
     "SKEW",
@@ -60,7 +57,7 @@ __all__ = [
     "EqualApprox",
     "ZEXP",
     "ZSigmoid",
-    "CrossUP",
+    "CrossUp",
     "CrossDown",
     "UpStreak",
     "DownStreak",

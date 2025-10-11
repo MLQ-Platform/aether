@@ -88,12 +88,23 @@ class ClauseTree:
     def evaluate(self):
         return self.root.propagate()
 
-    def __str__(self):
+    def get_node_descriptions(self) -> str:
+        descriptions = []
+
+        for node in self.nodes:
+            descriptions.append(f"- {node.name}: {node.description}")
+
+        return "\n".join(descriptions)
+
+    def render(self, return_str: bool = False):
         string = "\n".join(
             [f"{pre}{node.name}" for pre, _, node in RenderTree(self.root)]
         )
 
-        return string
+        if return_str:
+            return string
+
+        print(string)
 
     def __call__(self, *args, **kwargs):
         return self.evaluate()

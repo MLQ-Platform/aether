@@ -131,7 +131,6 @@ class StructuredLLM:
         """
         마크다운 코드 블록에서 JSON 추출
         """
-        # ```json ... ``` 또는 ``` ... ``` 패턴 찾기
         pattern = r"```(?:json)?\s*(.*?)\s*```"
         matches = re.findall(pattern, text, re.DOTALL)
 
@@ -154,6 +153,7 @@ class StructuredLLM:
                 "content": f"{user_system_content}\n\n{json_instruction}",
             }
             return [combined_system] + messages[1:]
+
         else:
             # 시스템 메시지가 없으면 JSON 지시사항만으로 생성
             system_msg = {"role": "system", "content": json_instruction}

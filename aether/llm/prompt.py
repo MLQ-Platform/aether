@@ -8,7 +8,7 @@ PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 class PromptLoader:
     """
-    마크다운 파일에서 프롬프트 로드
+    프롬프트 로드
     """
 
     def __init__(self, base_path: Optional[Path] = None):
@@ -20,11 +20,11 @@ class PromptLoader:
 
     def load(self, file_path: str, **variables) -> str:
         """
-        마크다운 파일에서 프롬프트 로드
+        프롬프트 로드
 
         Args:
-            file_path: 마크다운 파일 경로 (aether/prompts 기준 상대경로 또는 절대경로)
-            **variables: 템플릿 변수 (예: name="Alice", role="developer")
+            file_path: 텍스트 파일 경로 (aether/prompts 기준 상대경로 또는 절대경로)
+            **variables: 템플릿 변수 (예: tree_structure="...", node_descriptions="...")
         """
 
         path = self._resolve_path(file_path)

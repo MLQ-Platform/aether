@@ -1,3 +1,4 @@
+import inspect
 from typing import List
 from anytree import NodeMixin
 
@@ -28,6 +29,13 @@ class Node(NodeMixin):
     @property
     def name(self):
         return type(self).__name__ + "()"
+
+    @property
+    def description(self):
+        doc = self.__class__.__doc__
+        if doc:
+            return inspect.cleandoc(doc)
+        return ""
 
     @property
     def full(self):

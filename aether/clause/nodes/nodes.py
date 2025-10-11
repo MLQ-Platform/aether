@@ -1,5 +1,3 @@
-from math import erf
-from math import sqrt
 import numpy as np
 import pandas as pd
 from aether.clause.nodes.base import Node
@@ -9,10 +7,15 @@ from aether.provider import InMemoryDataProvider
 
 class DATA(Node):
     """
-    Data 값을 담은 리프 노드 (ex: 시장 데이터)
+    Leaf node that provides market data for a specific feature (OPEN, CLOSE, etc.) of a given ticker
     """
 
-    def __init__(self, label, ticker):
+    def __init__(
+        self,
+        label: str,
+        ticker: str,
+        provider: InMemoryDataProvider,
+    ):
         super(DATA, self).__init__(
             input_types=[],
             output_type=NodeIOTypes.FLOAT,
@@ -20,7 +23,7 @@ class DATA(Node):
         )
         self.label = label
         self.ticker = ticker
-        self.provider = InMemoryDataProvider()
+        self.provider = provider
 
     @property
     def name(self):
@@ -35,10 +38,10 @@ class DATA(Node):
 
 class SMA(Node):
     """
-    Simple Moving Average 연산 노드
+    Node that calculates the simple moving average over a given period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(SMA, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -48,15 +51,15 @@ class SMA(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).mean()
 
 
 class ADD(Node):
     """
-    두 개의 value를 더하는 연산 노드
+    Node that adds two time series values
     """
 
     def __init__(self):
@@ -66,16 +69,16 @@ class ADD(Node):
             max_childs=2,
         )
 
-    def activate(self, a, b):
-        return a + b
+    def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
+        return seq1 + seq2
 
 
 class SHIFT(Node):
     """
-    Seqence data shift를 period 만큼 shift 연산 노드
+    Node that shifts time series data by a specified period (p) to the past or future
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(SHIFT, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -85,18 +88,18 @@ class SHIFT(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.shift(self.period)
 
 
 class DIFF(Node):
     """
-    (n)번째 행과 (n-peirod)번째 행과의 차이 연산 노드
+    Node that calculates the difference between the current value and the value from a specified period (p) ago
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(DIFF, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -106,18 +109,18 @@ class DIFF(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.diff(self.period)
 
 
 class PctChange(Node):
     """
-    (n)번째 행과 (n-peirod)번째 행과의 변화율 연산 노드
+    Node that calculates the percentage change between the current value and the value from a specified period (p) ago
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(PctChange, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -127,15 +130,15 @@ class PctChange(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.pct_change(self.period, fill_method=None).ffill()
 
 
 class ShiftSign(Node):
     """
-    부호 shift 연산 노드
+    Node that inverts the sign of time series values
     """
 
     def __init__(self):
@@ -145,13 +148,13 @@ class ShiftSign(Node):
             max_childs=1,
         )
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return -seq
 
 
 class ABS(Node):
     """
-    절댓값 연산 노드
+    Node that calculates the absolute value of time series values
     """
 
     def __init__(self):
@@ -161,13 +164,13 @@ class ABS(Node):
             max_childs=1,
         )
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return np.abs(seq)
 
 
 class DIV(Node):
     """
-    두 값의 나눗셈 연산 노드
+    Node that divides the first time series value by the second time series value
     """
 
     def __init__(self):
@@ -177,13 +180,13 @@ class DIV(Node):
             max_childs=2,
         )
 
-    def activate(self, a, b):
-        return a / (b + 1e-10)
+    def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
+        return seq1 / (seq2 + 1e-10)
 
 
 class SUB(Node):
     """
-    두 값의 a-b 계산 노드
+    Node that subtracts the second time series value from the first time series value
     """
 
     def __init__(self):
@@ -193,13 +196,13 @@ class SUB(Node):
             max_childs=2,
         )
 
-    def activate(self, a, b):
-        return a - b
+    def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
+        return seq1 - seq2
 
 
 class Comparison(Node):
     """
-    두 값 a, b에 대하여 a > b 여부 연산 노드
+    Node that compares whether the first time series value is greater than the second and returns a boolean value
     """
 
     def __init__(self):
@@ -209,16 +212,16 @@ class Comparison(Node):
             max_childs=2,
         )
 
-    def activate(self, a, b):
-        return a > b
+    def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
+        return seq1 > seq2
 
 
 class NewHigh(Node):
     """
-    New High 갱신 여부 연산 노드
+    Node that detects whether the current value has reached a new high within a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(NewHigh, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
@@ -228,18 +231,18 @@ class NewHigh(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).max() == seq
 
 
 class NewLow(Node):
     """
-    New Low 갱신 여부 연산 노드
+    Node that detects whether the current value has reached a new low within a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(NewLow, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
@@ -249,18 +252,18 @@ class NewLow(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).min() == seq
 
 
 class ZSCORE(Node):
     """
-    롤링 윈도우로 Z-score 계산 노드
+    Node that calculates the z-score using the rolling mean and standard deviation over a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(ZSCORE, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -270,9 +273,9 @@ class ZSCORE(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq: pd.Series):
+    def activate(self, seq: pd.Series) -> pd.Series:
         rolling_mean = seq.rolling(self.period).mean()
         rolling_std = seq.rolling(self.period).std()
         zscore = (seq - rolling_mean) / rolling_std
@@ -281,10 +284,10 @@ class ZSCORE(Node):
 
 class STD(Node):
     """
-    롤링 표준편차 연산 노드
+    Node that calculates the rolling standard deviation over a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(STD, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -294,18 +297,18 @@ class STD(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).std()
 
 
 class MAX(Node):
     """
-    롤링 최댓값 연산 노드
+    Node that calculates the rolling maximum over a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(MAX, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -316,18 +319,18 @@ class MAX(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).max()
 
 
 class MIN(Node):
     """
-    롤링 최솟값 연산 노드
+    Node that calculates the rolling minimum over a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(MIN, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -338,18 +341,18 @@ class MIN(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).min()
 
 
 class SKEW(Node):
     """
-    왜도 (Skewness) 계산 노드
+    Node that calculates the rolling skewness over a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(SKEW, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -359,18 +362,18 @@ class SKEW(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).skew()
 
 
 class KURT(Node):
     """
-    첨도 (Kurtosis) 계산 노드
+    Node that calculates the rolling kurtosis over a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(KURT, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -380,18 +383,18 @@ class KURT(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).kurt()
 
 
 class LargerThan(Node):
     """
-    주어진 값 (n) 보다 큰지 여부 연산 노드
+    Node that compares whether the time series value is greater than a specified threshold (n) and returns a boolean value
     """
 
-    def __init__(self, n):
+    def __init__(self, n: float):
         super(LargerThan, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
@@ -401,18 +404,18 @@ class LargerThan(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.n})"
+        return type(self).__name__ + f"(n={self.n})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq > self.n
 
 
 class SmallerThan(Node):
     """
-    주어진 값 (n) 보다 작은지 여부 연산 노드
+    Node that compares whether the time series value is smaller than a specified threshold (n) and returns a boolean value
     """
 
-    def __init__(self, n):
+    def __init__(self, n: float):
         super(SmallerThan, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
@@ -420,16 +423,20 @@ class SmallerThan(Node):
         )
         self.n = n
 
-    def activate(self, seq):
+    @property
+    def name(self):
+        return type(self).__name__ + f"(n={self.n})"
+
+    def activate(self, seq: pd.Series) -> pd.Series:
         return seq < self.n
 
 
 class ZBetween(Node):
     """
-    주어진 시계열의 zscore가 범위 내에 있는지 여부 연산 노드
+    Node that checks whether the z-score of the time series is within a specified range (lo, hi) and returns a boolean value
     """
 
-    def __init__(self, period, lo, hi):
+    def __init__(self, period: int, lo: float, hi: float):
         super(ZBetween, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
@@ -443,10 +450,10 @@ class ZBetween(Node):
     def name(self):
         return (
             type(self).__name__
-            + f"({self.period}, {round(self.lo, 4)}, {round(self.hi, 4)})"
+            + f"(p={self.period}, lo={round(self.lo, 4)}, hi={round(self.hi, 4)})"
         )
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         rolling_mean = seq.rolling(self.period).mean()
         rolling_std = seq.rolling(self.period).std()
         zscore = (seq - rolling_mean) / (rolling_std + 1e-5)
@@ -455,7 +462,7 @@ class ZBetween(Node):
 
 class EqualApprox(Node):
     """
-    두 시계열 값이 근사한지 여부 연산 노드
+    Node that checks whether two time series values are approximately equal and returns a boolean value
     """
 
     def __init__(self, tol=1e-2):
@@ -468,18 +475,18 @@ class EqualApprox(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({round(self.tol, 4)})"
+        return type(self).__name__ + "()"
 
-    def activate(self, a, b):
-        return (a - b).abs() <= self.tol
+    def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
+        return (seq1 - seq2).abs() <= self.tol
 
 
 class ZEXP(Node):
     """
-    Z-score 정규화 후 Exp 연산 노드
+    Node that calculates the z-score of the time series and then applies the exponential function over a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(ZEXP, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -489,9 +496,9 @@ class ZEXP(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         rolling_mean = seq.rolling(self.period).mean()
         rolling_std = seq.rolling(self.period).std()
         zscore = (seq - rolling_mean) / (rolling_std + 1e-5)
@@ -500,10 +507,10 @@ class ZEXP(Node):
 
 class ZSigmoid(Node):
     """
-    Sigmoid 연산 노드
+    Node that calculates the z-score of the time series and then applies the sigmoid function over a specified period (p)
     """
 
-    def __init__(self, period):
+    def __init__(self, period: int):
         super(ZSigmoid, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.FLOAT,
@@ -514,9 +521,9 @@ class ZSigmoid(Node):
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.period})"
+        return type(self).__name__ + f"(p={self.period})"
 
-    def activate(self, seq):
+    def activate(self, seq: pd.Series) -> pd.Series:
         rolling_mean = seq.rolling(self.period).mean()
         rolling_std = seq.rolling(self.period).std()
         zscore = (seq - rolling_mean) / (rolling_std + 1e-5)
@@ -525,7 +532,7 @@ class ZSigmoid(Node):
 
 class CrossUp(Node):
     """
-    Cross Up 연산 노드
+    Node that detects when the first time series crosses above the second time series
     """
 
     def __init__(self):
@@ -535,13 +542,13 @@ class CrossUp(Node):
             max_childs=2,
         )
 
-    def activate(self, seq, seq2):
-        return (seq > seq2) & (seq.shift(1) <= seq2.shift(1))
+    def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
+        return (seq1 > seq2) & (seq1.shift(1) <= seq2.shift(1))
 
 
 class CrossDown(Node):
     """
-    Cross Down 연산 노드
+    Node that detects when the first time series crosses below the second time series
     """
 
     def __init__(self):
@@ -551,67 +558,26 @@ class CrossDown(Node):
             max_childs=2,
         )
 
-    def activate(self, seq, seq2):
-        return (seq < seq2) & (seq.shift(1) >= seq2.shift(1))
-
-
-class SlopeSignChange(Node):
-    """
-    최근 window 구간의 선형회귀 기울기 부호가 직전 대비 전환되는 순간을 포착
-    """
-
-    def __init__(self, p: int):
-        super(SlopeSignChange, self).__init__(
-            input_types=[NodeIOTypes.FLOAT],
-            output_type=NodeIOTypes.BINARY,
-            max_childs=1,
-        )
-        self.p = p
-
-    @property
-    def name(self):
-        return type(self).__name__ + f"({self.p})"
-
-    @staticmethod
-    def _rolling_slope(x: np.ndarray) -> float:
-        # x: 1D ndarray (길이 window), NaN 포함 가능
-        idx = np.arange(x.size)
-        mask = ~np.isnan(x)
-
-        if mask.sum() < 2:
-            return np.nan
-
-        xv = idx[mask]
-        yv = x[mask]
-        # 1차 선형회귀 slope
-        slope = np.polyfit(xv, yv, 1)[0]
-        return slope
-
-    def activate(self, seq: pd.Series) -> pd.Series:
-        slope = seq.rolling(self.p, min_periods=self.p).apply(
-            self._rolling_slope, raw=True
-        )
-        sign = np.sign(slope)
-        out = (sign != sign.shift(1)) & sign.notna() & sign.shift(1).notna()
-        return out.fillna(False)
+    def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
+        return (seq1 < seq2) & (seq1.shift(1) >= seq2.shift(1))
 
 
 class UpStreak(Node):
     """
-    시계열이 연속 k기간 증가(Δ>0)한 시점에 트리거
+    Node that detects when the time series increases consecutively for a specified period (p)
     """
 
-    def __init__(self, p: int):
+    def __init__(self, period: int):
         super(UpStreak, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
             max_childs=1,
         )
-        self.p = p
+        self.period = period
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.p})"
+        return type(self).__name__ + f"(p={self.period})"
 
     def activate(self, seq: pd.Series) -> pd.Series:
         inc = (seq.diff() > 0).astype(int)
@@ -620,26 +586,26 @@ class UpStreak(Node):
         grp = (inc != inc.shift()).cumsum()
         runlen = inc.groupby(grp).cumsum()
 
-        out = runlen >= self.p
+        out = runlen >= self.period
         return out.fillna(False)
 
 
 class DownStreak(Node):
     """
-    시계열이 연속 k기간 감소(Δ<0)한 시점에 트리거
+    Node that detects when the time series decreases consecutively for a specified period (p)
     """
 
-    def __init__(self, p: int):
+    def __init__(self, period: int):
         super(DownStreak, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
             max_childs=1,
         )
-        self.p = p
+        self.period = period
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.p})"
+        return type(self).__name__ + f"(p={self.period})"
 
     def activate(self, seq: pd.Series) -> pd.Series:
         dec = (seq.diff() < 0).astype(int)
@@ -647,18 +613,18 @@ class DownStreak(Node):
         grp = (dec != dec.shift()).cumsum()
         runlen = dec.groupby(grp).cumsum()
 
-        out = runlen >= self.p
+        out = runlen >= self.period
         return out.fillna(False)
 
 
 class MeanRevertKick(Node):
     """
-    극단(z-score) 상태 진입 후 Dmax 이내에 중심(평균) 방향으로 유의미하게 되돌아오는 포인트 캐치
+    Node that detects when the p rolling z-score exceeds a threshold (z_th) and then reverts toward the mean within a specified period (dmax)
     """
 
     def __init__(
         self,
-        p: int,
+        period: int,
         z_th: float,
         dmax: int,
         eps: float,
@@ -668,9 +634,9 @@ class MeanRevertKick(Node):
             output_type=NodeIOTypes.BINARY,
             max_childs=1,
         )
-        assert p >= 2
+        assert period >= 2
 
-        self.p = p
+        self.period = period
         self.z_th = z_th
         self.dmax = dmax
         self.eps = eps
@@ -679,7 +645,7 @@ class MeanRevertKick(Node):
     def name(self):
         return (
             type(self).__name__
-            + f"(p={self.p}, z_th={round(self.z_th, 3)}, dmax={self.dmax})"
+            + f"(p={self.period}, z_th={round(self.z_th, 3)}, dmax={self.dmax})"
         )
 
     def activate(self, seq: pd.Series) -> pd.Series:
@@ -689,8 +655,8 @@ class MeanRevertKick(Node):
         3. 향후 Dmax 내에서 |z|가 (|z_t|-eps) 미만으로 감소하면 트리거.
         """
 
-        mu = seq.rolling(self.p, min_periods=self.p).mean()
-        sd = seq.rolling(self.p, min_periods=self.p).std()
+        mu = seq.rolling(self.period, min_periods=self.period).mean()
+        sd = seq.rolling(self.period, min_periods=self.period).std()
         z = (seq - mu) / (sd + 1e-5)
         abs_z = z.abs()
 
@@ -708,25 +674,25 @@ class MeanRevertKick(Node):
 
 class PullbackWithinBand(Node):
     """
-    밴드 안쪽으로 재진입하는 포인트 캐치
+    Node that detects when the time series value reenters the Bollinger Bands (SMA(p) +/- k*sig(p)) from outside
     """
 
-    def __init__(self, p: int, k: float):
+    def __init__(self, period: int, k: float):
         super(PullbackWithinBand, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
             max_childs=1,
         )
-        self.p = p
+        self.period = period
         self.k = float(k)
 
     @property
     def name(self):
-        return type(self).__name__ + f"({self.p}, k={round(self.k, 3)})"
+        return type(self).__name__ + f"(p={self.period}, k={round(self.k, 3)})"
 
     def activate(self, seq: pd.Series) -> pd.Series:
-        mu = seq.rolling(self.p, min_periods=self.p).mean()
-        sd = seq.rolling(self.p, min_periods=self.p).std()
+        mu = seq.rolling(self.period, min_periods=self.period).mean()
+        sd = seq.rolling(self.period, min_periods=self.period).std()
         upper = mu + self.k * sd
         lower = mu - self.k * sd
 
@@ -740,7 +706,7 @@ class PullbackWithinBand(Node):
 
 class DrawdownExceed(Node):
     """
-    최근 lookback 고점 대비 드로다운이 pct 이상으로 확대되는 포인트 캐치
+    Node that detects when the drawdown from the highest point within a specified period (lb) exceeds a threshold (pct)
     """
 
     def __init__(self, pct: float, lookback: int):
@@ -767,26 +733,27 @@ class DrawdownExceed(Node):
 
 class JumpDetect(Node):
     """
-    의도: 변화량(|Δ|)이 최근 window 분포의 상위 (1 - q_tail) 분위 이상(꼬리 q_tail)인 '점프'를 포착한다.
-    - 예: q_tail=0.10이면 상위 10% 절대변화 이상을 이벤트로 본다.
+    Node that detects sudden jumps when the absolute change in the time series exceeds a specified upper percentile (q_tail) of the distribution within a given period (p)
     """
 
-    def __init__(self, p: int, q_tail: float):
+    def __init__(self, period: int, q_tail: float):
         super(JumpDetect, self).__init__(
             input_types=[NodeIOTypes.FLOAT],
             output_type=NodeIOTypes.BINARY,
             max_childs=1,
         )
         assert 0.0 < q_tail < 1.0
-        self.p = p
+        self.period = period
         self.q_tail = q_tail
 
     @property
     def name(self):
-        return type(self).__name__ + f"(p={self.p}, tail={round(self.q_tail, 3)})"
+        return type(self).__name__ + f"(p={self.period}, tail={round(self.q_tail, 3)})"
 
     def activate(self, seq: pd.Series) -> pd.Series:
         r = seq.diff().abs()
-        thresh = r.rolling(self.p, min_periods=self.p).quantile(1.0 - self.q_tail)
+        thresh = r.rolling(self.period, min_periods=self.period).quantile(
+            1.0 - self.q_tail
+        )
         out = r >= thresh
         return out.fillna(False)
