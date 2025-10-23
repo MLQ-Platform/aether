@@ -5,7 +5,6 @@ from aether.llm.agent import ToolCallAdapter
 from aether.llm.agent import ToolRegistry
 from aether.llm.base import BaseLLM
 from aether.llm.prompt import PromptLoader
-from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
 from aether.llm.types import Message
 from aether.llm.types import Messages
@@ -26,5 +25,4 @@ __all__ = [
     "Messages",
     # Prompts
     "PromptLoader",
-    "load_prompt",
 ]

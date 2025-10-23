@@ -1,0 +1,170 @@
+# Role
+당신은 논리 구조를 자연어로 변환하는 전문가로서, 최종 그래프를 Statement 형식으로 재구성합니다.
+
+# Task
+반복 개선이 완료된 논리 그래프를 받아, 구조화된 Statement로 변환합니다.
+Statement는 하나의 concept과 여러 rationales로 구성됩니다.
+
+<final_graph>
+<<final_graph>>
+</final_graph>
+
+# Statement Structure
+
+```
+{
+  "concept": "핵심 주장 (2-3문장)",
+  "rationale": [
+    "근거 1: concept을 뒷받침하는 설명",
+    "근거 2: ...",
+    "근거 3: ..."
+  ]
+}
+```
+
+# Conversion Rules
+
+## Concept 생성
+**중심 정점 → Concept**
+- CONCEPT 타입 정점들 중 가장 핵심적인 것 선택
+- 그래프의 결론에 해당하는 정점
+- 2-3문장으로 요약
+- 명확하고 구체적으로 표현
+
+## Rationales 생성
+**주변 노드 → Rationales**
+
+각 rationale은 다음 중 하나를 다룸:
+1. **조건/전제**: CONDITION 타입 정점들
+   - "어떤 조건에서 성립하는가"
+   
+2. **방법론**: METHOD 타입 정점들
+   - "어떤 방법/지표를 사용하는가"
+   
+3. **메커니즘**: MECHANISM 타입 정점들
+   - "왜 작동하는가, 어떤 원리인가"
+   
+4. **증거**: EVIDENCE 타입 정점들
+   - "어떤 데이터/연구가 뒷받침하는가"
+
+## Requirements
+- 각 rationale은 독립적으로 읽혀도 이해 가능
+- 전문 용어는 간단히 설명
+- 논리적 흐름을 유지하면서 간결하게
+- 수치나 조건은 구체적으로 명시
+- 각 rationale은 2-3문장
+
+# Output Format
+
+<statement>
+<concept>
+핵심 개념 설명 (2-3문장)
+</concept>
+
+<rationales>
+<rationale type="condition|method|mechanism|evidence">
+근거 설명 (2-3문장)
+</rationale>
+...
+</rationales>
+</statement>
+
+<mapping>
+<concept_vertices>concept에 매핑된 정점 ID들</concept_vertices>
+<rationale_mapping>
+<rationale id="1">
+<source_vertices>이 rationale에 사용된 정점 ID들</source_vertices>
+<type>condition|method|mechanism|evidence</type>
+</rationale>
+...
+</rationale_mapping>
+</mapping>
+
+# Example
+
+<example>
+<final_graph>
+<vertices>
+<vertex id="V1" type="CONDITION">
+<text>시장이 횡보 상태이다 (ADX ≤ 25)</text>
+</vertex>
+<vertex id="V2" type="METHOD">
+<text>RSI가 30 이하로 하락한다</text>
+</vertex>
+<vertex id="V3" type="METHOD">
+<text>거래량이 20일 평균 대비 150% 이상 급증한다</text>
+</vertex>
+<vertex id="V4" type="MECHANISM">
+<text>매도 압력이 소진된다</text>
+</vertex>
+<vertex id="V5" type="MECHANISM">
+<text>평균 회귀 메커니즘이 작동한다</text>
+</vertex>
+<vertex id="V6" type="CONCEPT">
+<text>3일 이내에 가격 반등이 발생한다</text>
+</vertex>
+<vertex id="V7" type="EVIDENCE">
+<text>2020-2024 백테스트에서 68% 반등 확률 관찰됨</text>
+</vertex>
+</vertices>
+<edges>
+(edges omitted for brevity)
+</edges>
+</final_graph>
+
+<statement>
+<concept>
+횡보 시장 환경에서 RSI 과매도 신호와 거래량 급증이 동시에 나타날 때, 평균 회귀 패턴이 작동하여 단기 가격 반등이 발생합니다. 이는 매도 압력 소진 후 시장의 자연스러운 균형 회복 과정을 나타냅니다.
+</concept>
+
+<rationales>
+<rationale type="condition">
+이 패턴은 추세가 약한 횡보 시장(ADX ≤ 25)에서 유효합니다. 강한 추세 시장에서는 과매도 상태가 지속될 수 있어 해당 전략의 적용을 제한합니다.
+</rationale>
+
+<rationale type="method">
+RSI 지표가 30 이하로 하락하고 동시에 거래량이 20일 평균 대비 150% 이상 급증하는 조건을 사용합니다. 단일 지표가 아닌 복합 조건으로 신호의 신뢰성을 높입니다.
+</rationale>
+
+<rationale type="mechanism">
+이 조건 조합은 단순 과매도를 넘어 매도 압력의 실질적 소진(selling exhaustion)을 나타냅니다. 횡보장에서는 극단적 움직임 후 평균으로 회귀하려는 메커니즘이 작동하며, 이것이 반등의 원동력이 됩니다.
+</rationale>
+
+<rationale type="evidence">
+2020년부터 2024년까지의 백테스트 결과, 위 조건이 충족되었을 때 3일 이내 가격 반등이 68%의 확률로 관찰되었습니다. 이는 통계적으로 유의미한 패턴임을 실증적으로 뒷받침합니다.
+</rationale>
+</rationales>
+</statement>
+
+<mapping>
+<concept_vertices>V6, V5</concept_vertices>
+<rationale_mapping>
+<rationale id="1">
+<source_vertices>V1</source_vertices>
+<type>condition</type>
+</rationale>
+<rationale id="2">
+<source_vertices>V2, V3</source_vertices>
+<type>method</type>
+</rationale>
+<rationale id="3">
+<source_vertices>V4, V5</source_vertices>
+<type>mechanism</type>
+</rationale>
+<rationale id="4">
+<source_vertices>V7</source_vertices>
+<type>evidence</type>
+</rationale>
+</rationale_mapping>
+</mapping>
+</example>
+
+# Instructions
+그래프를 분석하여:
+1. 가장 핵심적인 CONCEPT 정점 식별
+2. 이를 중심으로 2-3문장으로 concept 작성
+3. 주변 정점들을 타입별로 그룹화
+4. 각 그룹을 rationale로 변환 (2-3문장)
+5. 논리적 순서로 rationales 배열
+6. 매핑 정보 기록
+

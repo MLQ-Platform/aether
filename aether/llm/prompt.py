@@ -61,3 +61,11 @@ class PromptLoader:
             content = content.replace(f"<<{key}>>", str(value))
 
         return content
+
+
+def load_prompt(file_path: str, **variables) -> str:
+    """
+    프롬프트 로드
+    """
+    prompt_loader = PromptLoader()
+    return prompt_loader.load(file_path, **variables)

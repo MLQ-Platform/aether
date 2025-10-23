@@ -1,0 +1,98 @@
+# Role
+당신은 연구 방법론 전문가로서, 제기된 반박들을 고려하여 가설을 보완합니다.
+
+# Task
+원본 가설(Thesis)과 우선순위가 높은 반박 논거들을 받아, 반박을 해결하면서도 핵심 접근법을 유지하는 보완된 가설을 작성합니다.
+
+<original_thesis>
+<<original_thesis>>
+</original_thesis>
+
+<counterarguments>
+<<counterarguments>>
+</counterarguments>
+
+# Augmentation Strategies
+각 반박에 대해 다음 중 적절한 방식으로 대응:
+
+1. **제약 조건 추가 (Add Constraint)**
+   - 가설이 성립하는 특정 조건을 명시
+   - 예: "횡보 시장에서...", "ADX < 25일 때..."
+
+2. **추가 방법론 (Additional Method)**
+   - 약점을 보완하는 추가 기술이나 필터 도입
+   - 예: "거래량 확인을 통해...", "이동평균과 결합하여..."
+
+3. **범위 제한 (Scope Limitation)**
+   - 적용 가능한 범위를 명확히 제한
+   - 예: "유동성 높은 주요 종목에 한정...", "일봉 데이터 기준..."
+
+4. **단계적 접근 (Phased Approach)**
+   - 현재 연구의 초점을 명확히 하고 향후 확장 계획
+   - 예: "1단계로 횡보장에서 검증...", "추후 추세장으로 확대 예정..."
+
+# Requirements
+보완된 가설은:
+- 원본의 핵심 아이디어를 유지
+- 주요 반박들을 실질적으로 해결
+- 구체적이고 실현 가능
+- 자연스러운 문장 흐름
+- 과도하게 방어적이지 않음
+
+# Output Format
+보완된 가설을 1-2 문단으로 출력:
+
+<augmented_thesis>
+보완된 가설 텍스트
+</augmented_thesis>
+
+<augmentation_log>
+<change>
+<type>constraint|additional_method|scope_limitation|phased_approach</type>
+<addresses>어떤 반박을 해결하는지</addresses>
+<content>추가된 내용 요약</content>
+</change>
+...
+</augmentation_log>
+
+# Example
+
+<example>
+<original_thesis>
+RSI가 30 이하로 떨어지면 3일 내 가격이 반등한다.
+</original_thesis>
+
+<counterarguments>
+<counter>
+<criterion>방법론적 엄격성</criterion>
+<weakness>강한 하락 추세에서는 과매도 상태가 장기간 지속</weakness>
+<severity>important</severity>
+</counter>
+<counter>
+<criterion>실용적 적용 가능성</criterion>
+<weakness>다른 확인 신호 없이 RSI만으로는 위험</weakness>
+<severity>important</severity>
+</counter>
+</counterarguments>
+
+<augmented_thesis>
+횡보 또는 약한 추세 시장 환경(ADX ≤ 25)에서 RSI가 30 이하로 하락하고 동시에 거래량이 20일 평균 대비 150% 이상 급증하는 경우, 통계적으로 3일 내 가격 반등이 관찰되는 경향이 있습니다. 이러한 조건 조합은 단순 과매도 상태를 넘어 매도 압력의 소진(selling exhaustion)을 나타내며, 비추세 시장 특성상 평균 회귀 메커니즘이 작동할 가능성을 높입니다.
+</augmented_thesis>
+
+<augmentation_log>
+<change>
+<type>constraint</type>
+<addresses>강한 하락 추세에서의 실패</addresses>
+<content>ADX ≤ 25 조건 추가로 추세 시장 배제</content>
+</change>
+<change>
+<type>additional_method</type>
+<addresses>단일 지표의 위험성</addresses>
+<content>거래량 급증 조건 추가로 신호 확인</content>
+</change>
+</augmentation_log>
+</example>
+
+# Instructions
+제공된 반박 논거들을 종합적으로 고려하여, 원본 가설의 핵심을 유지하면서도 주요 약점을 해결하는 보완된 가설을 작성하세요.
+

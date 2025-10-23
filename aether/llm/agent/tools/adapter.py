@@ -2,45 +2,10 @@ import json
 from abc import ABC
 from abc import abstractmethod
 from typing import Any
-from typing import Callable
 from typing import Dict
 from typing import List
 from openai import OpenAI
-from pydantic import BaseModel
-from pydantic import Field
-
-
-class Tool(BaseModel):
-    """
-    범용 Tool 정의
-
-    LLM이 호출할 수 있는 도구(함수)를 정의합니다.
-
-    Example:
-        def search_web(query: str) -> str:
-            return f"Search results for: {query}"
-
-        tool = Tool(
-            name="search_web",
-            description="Search the web for information",
-            func=search_web,
-            parameters={
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "Search query"}
-                },
-                "required": ["query"]
-            }
-        )
-    """
-
-    name: str = Field(description="도구 이름")
-    description: str = Field(description="도구 설명")
-    func: Callable = Field(description="실제 실행할 함수")
-    parameters: Dict[str, Any] = Field(description="JSON Schema 형식의 파라미터")
-
-    class Config:
-        arbitrary_types_allowed = True
+from aether.llm.agent.tools.base import Tool
 
 
 class ToolCallAdapter(ABC):
@@ -75,7 +40,7 @@ class ToolCallAdapter(ABC):
 
     @abstractmethod
     def format_tool_result(
-        self, tool_call: Dict, result: str, messages: List[Dict]
+        self, tool_call: Dict, result: str, messages: List[Dict], reasoning: str = None
     ) -> None:
         """Tool 실행 결과를 메시지에 추가 (in-place)"""
         pass
@@ -93,11 +58,14 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
     OpenAI 및 OpenAI 호환 API (OpenRouter 등)에서 사용
     """
 
-    def __init__(self, client: OpenAI):
+    def __init__(self, model: str, client: OpenAI):
+        self.model = model
         self.client = client
 
     def convert_tools_to_api_format(self, tools: List[Tool]) -> List[Dict]:
-        """Tool → OpenAI tools 형식"""
+        """
+        Tool → OpenAI tools 형식
+        """
         return [
             {
                 "type": "function",
@@ -110,16 +78,20 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
             for tool in tools
         ]
 
-    def call_with_tools(
-        self, messages: List[Dict], tools: List[Dict], model: str, **kwargs
-    ) -> Any:
-        """OpenAI API 호출"""
+    def call_with_tools(self, messages: List[Dict], tools: List[Dict], **kwargs) -> Any:
+        """
+        OpenAI API 호출
+        """
+        # parallel_tool_calls를 명시적으로 설정하지 않으면 기본값 사용
+        # False로 설정하면 한 번에 하나씩만 호출 (reasoning이 더 자세해질 수 있음)
         return self.client.chat.completions.create(
-            model=model, messages=messages, tools=tools, **kwargs
+            model=self.model, messages=messages, tools=tools, **kwargs
         )
 
     def extract_tool_calls(self, response: Any) -> List[Dict]:
-        """OpenAI 응답에서 tool calls 추출"""
+        """
+        OpenAI 응답에서 tool calls 추출
+        """
         message = response.choices[0].message
 
         if not message.tool_calls:
@@ -135,19 +107,29 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
         ]
 
     def has_tool_calls(self, response: Any) -> bool:
-        """Tool Call이 있는지 확인"""
+        """
+        Tool Call이 있는지 확인
+        """
         message = response.choices[0].message
         return bool(message.tool_calls)
 
     def format_tool_result(
-        self, tool_call: Dict, result: str, messages: List[Dict]
+        self, tool_call: Dict, result: str, messages: List[Dict], reasoning: str = None
     ) -> None:
-        """Tool 결과를 메시지에 추가 (OpenAI 형식)"""
-        # Assistant의 tool call 추가
+        """
+        Tool 결과를 메시지에 추가 (OpenAI 형식)
+
+        Args:
+            tool_call: Tool 호출 정보
+            result: Tool 실행 결과
+            messages: 메시지 리스트
+            reasoning: LLM의 추론 과정 텍스트 (선택)
+        """
+        # Assistant의 tool call 추가 (reasoning도 포함)
         messages.append(
             {
                 "role": "assistant",
-                "content": None,
+                "content": reasoning if reasoning else None,
                 "tool_calls": [
                     {
                         "id": tool_call["id"],
@@ -167,5 +149,7 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
         )
 
     def get_final_content(self, response: Any) -> str:
-        """최종 응답 텍스트 추출"""
+        """
+        최종 응답 텍스트 추출
+        """
         return response.choices[0].message.content or ""

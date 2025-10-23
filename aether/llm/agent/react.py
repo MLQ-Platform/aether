@@ -1,10 +1,7 @@
-from typing import Any
-from typing import Callable
-from typing import Dict
 from typing import List
 from typing import Optional
-from aether.llm.agent.tools import Tool
-from aether.llm.agent.tools import ToolCallAdapter
+from aether.llm.agent.tools.adapter import ToolCallAdapter
+from aether.llm.agent.tools.base import Tool
 
 
 class ReactAgent:
@@ -48,9 +45,9 @@ class ReactAgent:
 
     def __init__(
         self,
+        model: str,
         adapter: ToolCallAdapter,
         tools: List[Tool],
-        model: str,
         max_iterations: int = 10,
         verbose: bool = False,
     ):
@@ -113,6 +110,12 @@ class ReactAgent:
 
             # 3. Tool Call 추출 및 실행
             tool_calls = self.adapter.extract_tool_calls(response)
+            # Tool call 시 LLM의 추론 과정(content) 확인 및 출력
+            reasoning = self.adapter.get_final_content(response)
+
+            if reasoning:
+                if self.verbose:
+                    print(f"[Agent] Reasoning: {reasoning}")
 
             if self.verbose:
                 print(f"[Agent] Tool calls: {len(tool_calls)}")
@@ -137,74 +140,10 @@ class ReactAgent:
                 if self.verbose:
                     print(f"[Agent] Result: {result[:100]}...")
 
-                # 결과를 메시지에 추가
-                self.adapter.format_tool_result(tool_call, result, messages)
+                # 결과를 메시지에 추가 (reasoning 포함)
+                self.adapter.format_tool_result(tool_call, result, messages, reasoning)
 
         # 최대 반복 횟수 도달
         raise RuntimeError(
             f"Agent reached maximum iterations ({self.max_iterations}) without completing the task"
         )
-
-    def get_conversation_history(self) -> List[Dict]:
-        """
-        대화 히스토리 반환 (디버깅용)
-
-        Note: 현재 구현은 stateless이므로 별도로 추적 필요
-        """
-        # TODO: 대화 히스토리 추적 구현
-        pass
-
-
-class ToolRegistry:
-    """
-    Tool 레지스트리
-
-    여러 Tool을 관리하고 쉽게 등록/조회할 수 있는 유틸리티
-    """
-
-    def __init__(self):
-        self._tools: Dict[str, Tool] = {}
-
-    def register(self, tool: Tool) -> None:
-        """Tool 등록"""
-        self._tools[tool.name] = tool
-
-    def get(self, name: str) -> Optional[Tool]:
-        """Tool 조회"""
-        return self._tools.get(name)
-
-    def list(self) -> List[Tool]:
-        """모든 Tool 리스트 반환"""
-        return list(self._tools.values())
-
-    def decorator(self, name: str, description: str, parameters: Dict[str, Any]):
-        """
-        데코레이터로 Tool 등록
-
-        Example:
-            registry = ToolRegistry()
-
-            @registry.decorator(
-                name="add",
-                description="Add two numbers",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "a": {"type": "number"},
-                        "b": {"type": "number"}
-                    },
-                    "required": ["a", "b"]
-                }
-            )
-            def add(a: float, b: float) -> float:
-                return a + b
-        """
-
-        def wrapper(func: Callable) -> Callable:
-            tool = Tool(
-                name=name, description=description, func=func, parameters=parameters
-            )
-            self.register(tool)
-            return func
-
-        return wrapper

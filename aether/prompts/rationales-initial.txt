@@ -1,0 +1,105 @@
+# Role
+당신은 금융 시장 가설을 논리적 근거(rationales)로 분해하는 전문가입니다.
+
+# Task
+주어진 가설(Thesis)을 분석하여, 이를 뒷받침하는 초기 논리적 근거들(rationales)을 생성합니다.
+
+<thesis>
+<<thesis>>
+</thesis>
+
+# What are Rationales?
+Rationales는 가설을 검증하고 뒷받침하는 논리적 설명들입니다.
+각 rationale은:
+- 가설의 특정 측면을 설명
+- 왜 그것이 타당한지 논증
+- 독립적으로 이해 가능
+- 2-3문장 길이
+
+# Rationale Types
+생성해야 할 rationales 유형:
+
+1. **전제 조건 (Preconditions)**
+   - 가설이 성립하기 위한 조건
+   - "어떤 상황에서 작동하는가?"
+   
+2. **메커니즘 (Mechanisms)**
+   - 가설이 작동하는 원리
+   - "왜 이렇게 되는가?"
+   
+3. **방법론 (Methods)**
+   - 어떤 지표/방법을 사용하는가
+   - "어떻게 측정/확인하는가?"
+   
+4. **예상 결과 (Expected Outcomes)**
+   - 가설이 맞다면 관찰될 것
+   - "무엇을 기대하는가?"
+
+# Requirements
+- 가설을 4-6개의 rationales로 분해
+- 각 rationale은 검증 가능해야 함
+- 논리적으로 연결되어야 함
+- 구체적이고 명확해야 함
+- 측정 가능한 용어 사용
+
+# Output Format
+
+<rationales>
+<rationale type="precondition|mechanism|method|outcome">
+<content>rationale 내용 (2-3문장)</content>
+<verifiable>true|false</verifiable>
+<key_claim>핵심 주장 한 문장</key_claim>
+</rationale>
+...
+</rationales>
+
+# Example
+
+<example>
+<thesis>
+RSI가 30 이하로 떨어지면 3일 내 가격이 반등한다.
+</thesis>
+
+<rationales>
+<rationale type="precondition">
+<content>이 패턴은 시장이 명확한 추세 없이 횡보하는 구간에서 유효합니다. 강한 하락 추세에서는 RSI가 30 이하에서 장기간 머물 수 있어, 즉각적인 반등 신호로 사용하기 어렵습니다.</content>
+<verifiable>true</verifiable>
+<key_claim>횡보 시장에서만 유효함</key_claim>
+</rationale>
+
+<rationale type="method">
+<content>RSI(Relative Strength Index) 지표를 14일 기간으로 계산하여 30 이하 조건을 감지합니다. 이는 Wilder가 제안한 표준 설정으로, 과매도 조건을 식별하는 기술적 분석의 표준 방법입니다.</content>
+<verifiable>true</verifiable>
+<key_claim>RSI 14일 기준 30 이하 사용</key_claim>
+</rationale>
+
+<rationale type="mechanism">
+<content>RSI 30 이하는 과도한 매도 압력으로 인한 과매도 상태를 나타냅니다. 이러한 극단적 조건은 매도 압력의 소진(selling exhaustion)을 시사하며, 평균 회귀 원리에 따라 가격이 정상 수준으로 되돌아가려는 경향을 만듭니다.</content>
+<verifiable>true</verifiable>
+<key_claim>과매도 후 평균 회귀 메커니즘</key_claim>
+</rationale>
+
+<rationale type="outcome">
+<content>RSI 30 이하 조건 충족 후 3일 이내에 가격이 진입점 대비 상승하는 패턴이 관찰됩니다. 반등의 크기는 시장 상황에 따라 다르지만, 통계적으로 유의미한 상승 확률을 보입니다.</content>
+<verifiable>true</verifiable>
+<key_claim>3일 내 가격 상승 확률 높음</key_claim>
+</rationale>
+
+<rationale type="precondition">
+<content>이 전략은 충분한 유동성이 있는 시장에서 작동합니다. 거래량이 매우 낮은 종목에서는 RSI 신호가 신뢰할 수 없으며, 가격 조작이나 비정상적 움직임에 영향받을 수 있습니다.</content>
+<verifiable>true</verifiable>
+<key_claim>충분한 유동성 필요</key_claim>
+</rationale>
+</rationales>
+</example>
+
+# Instructions
+주어진 가설을 분석하여:
+1. 가설의 핵심 주장 파악
+2. 이를 뒷받침하는 논리적 근거들 식별
+3. 각 근거를 적절한 타입으로 분류
+4. 검증 가능성 판단
+5. 2-3문장으로 명확하게 작성
+
+각 rationale은 나중에 반박되거나 보완될 수 있으므로, 명확하고 구체적으로 작성하세요.
+

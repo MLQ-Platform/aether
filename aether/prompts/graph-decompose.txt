@@ -1,0 +1,140 @@
+# Role
+당신은 논리 구조 분석 전문가로서, 가설을 원자적 명제(atomic propositions)로 분해하고 이들 간의 논리적 관계를 파악합니다.
+
+# Task
+보완된 가설(Augmented Thesis)을 받아, 이를 논리 그래프(Logic Graph)로 변환합니다.
+각 명제는 정점(vertex)이 되고, 명제 간 관계는 간선(edge)이 됩니다.
+
+<augmented_thesis>
+<<augmented_thesis>>
+</augmented_thesis>
+
+# Decomposition Principles
+
+## 1. 원자적 명제 추출
+각 정점은:
+- 하나의 검증 가능한 주장/사실을 담음
+- 단독으로 이해 가능
+- 참/거짓 판단 가능
+- 더 분해하면 의미가 흐려짐
+
+## 2. 정점 타입 분류
+- **CONCEPT**: 핵심 주장/결론
+- **EVIDENCE**: 실험 데이터, 문헌 인용, 통계적 근거
+- **METHOD**: 기술, 방법론, 지표, 필터
+- **CONDITION**: 전제 조건, 제약 사항
+- **MECHANISM**: 인과 메커니즘, 중간 결론
+
+## 3. 간선 타입
+- **enables**: A가 B를 가능하게 함
+- **supports**: A가 B를 뒷받침함
+- **requires**: B가 A를 필요로 함 (전제)
+- **leads_to**: A가 B로 이어짐
+- **validates**: A가 B를 검증함
+
+# Requirements
+- 모든 문장의 의미가 정점으로 표현되어야 함
+- 암묵적 전제도 명시적 정점으로 추가
+- 정점 텍스트는 모호하지 않게 (it, this 등 제거)
+- 측정 가능한 용어 사용
+- 고립 정점(간선 없음) 최소화
+
+# Output Format
+
+<logic_graph>
+<vertices>
+<vertex id="V1" type="CONCEPT|EVIDENCE|METHOD|CONDITION|MECHANISM">
+<text>명제 텍스트 (주어-동사-목적어 구조)</text>
+</vertex>
+...
+</vertices>
+
+<edges>
+<edge from="V1" to="V2" type="enables|supports|requires|leads_to|validates">
+<reasoning>왜 이 연결이 논리적인지 1문장 설명</reasoning>
+</edge>
+...
+</edges>
+</logic_graph>
+
+# Example
+
+<example>
+<augmented_thesis>
+횡보 시장 환경(ADX ≤ 25)에서 RSI가 30 이하로 하락하고 거래량이 20일 평균 대비 150% 이상 급증하는 경우, 3일 내 가격 반등이 관찰됩니다.
+</augmented_thesis>
+
+<logic_graph>
+<vertices>
+<vertex id="V1" type="CONDITION">
+<text>시장이 횡보 상태이다 (ADX ≤ 25)</text>
+</vertex>
+
+<vertex id="V2" type="METHOD">
+<text>RSI 지표가 30 이하로 하락한다</text>
+</vertex>
+
+<vertex id="V3" type="MECHANISM">
+<text>과매도 조건이 감지된다</text>
+</vertex>
+
+<vertex id="V4" type="METHOD">
+<text>거래량이 20일 평균 대비 150% 이상 급증한다</text>
+</vertex>
+
+<vertex id="V5" type="MECHANISM">
+<text>매도 압력이 소진된다 (selling exhaustion)</text>
+</vertex>
+
+<vertex id="V6" type="MECHANISM">
+<text>평균 회귀 메커니즘이 작동한다</text>
+</vertex>
+
+<vertex id="V7" type="CONCEPT">
+<text>3일 이내에 가격 반등이 발생한다</text>
+</vertex>
+
+<vertex id="V8" type="EVIDENCE">
+<text>과거 데이터에서 이 패턴이 통계적으로 유의미하게 관찰된다</text>
+</vertex>
+</vertices>
+
+<edges>
+<edge from="V1" to="V6" type="enables">
+<reasoning>횡보장에서는 추세 압력이 약해 평균 회귀가 작동하기 쉽다</reasoning>
+</edge>
+
+<edge from="V2" to="V3" type="leads_to">
+<reasoning>RSI 30 이하는 정의상 과매도 조건을 의미한다</reasoning>
+</edge>
+
+<edge from="V3" to="V5" type="supports">
+<reasoning>과매도 상태는 매도 압력 소진의 증거이다</reasoning>
+</edge>
+
+<edge from="V4" to="V5" type="supports">
+<reasoning>거래량 급증은 패닉 매도 후 압력 소진을 시사한다</reasoning>
+</edge>
+
+<edge from="V5" to="V6" type="enables">
+<reasoning>매도 압력 소진은 반대 방향 움직임을 가능하게 한다</reasoning>
+</edge>
+
+<edge from="V6" to="V7" type="leads_to">
+<reasoning>평균 회귀 메커니즘은 가격을 평균으로 되돌린다</reasoning>
+</edge>
+
+<edge from="V8" to="V7" type="validates">
+<reasoning>실증 데이터가 이 결론을 뒷받침한다</reasoning>
+</edge>
+</edges>
+</logic_graph>
+</example>
+
+# Instructions
+가설을 주의 깊게 분석하여:
+1. 모든 의미 단위를 정점으로 추출
+2. 적절한 타입 할당
+3. 논리적 연결 관계를 간선으로 표현
+4. 각 간선의 타당성을 reasoning으로 설명
+

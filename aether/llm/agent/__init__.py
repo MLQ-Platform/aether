@@ -1,19 +1,15 @@
-"""
-Agent 모듈
-
-ReAct Agent 및 Tool Calling 관련 유틸리티
-"""
-
-from aether.llm.agent.core import ReactAgent
-from aether.llm.agent.core import ToolRegistry
-from aether.llm.agent.tools import OpenAIToolCallAdapter
-from aether.llm.agent.tools import Tool
-from aether.llm.agent.tools import ToolCallAdapter
+from aether.llm.agent.react import ReactAgent
+from aether.llm.agent.tools.adapter import OpenAIToolCallAdapter
+from aether.llm.agent.tools.adapter import ToolCallAdapter
+from aether.llm.agent.tools.base import Tool
+from aether.llm.agent.tools.registry import ToolRegistry
+from aether.llm.agent.tools.registry import registry
 
 __all__ = [
+    "Tool",
+    "registry",
     "ReactAgent",
     "ToolRegistry",
-    "Tool",
     "ToolCallAdapter",
     "OpenAIToolCallAdapter",
 ]
