@@ -1,0 +1,82 @@
+# Data Schema Definition
+columns:
+  OPEN:
+    type: float64
+    description: "Opening price of the candlestick period in USDT."
+  
+  HIGH:
+    type: float64
+    description: "Highest price reached during the candlestick period in USDT."
+  
+  LOW:
+    type: float64
+    description: "Lowest price reached during the candlestick period in USDT."
+  
+  CLOSE:
+    type: float64
+    description: "Closing price of the candlestick period in USDT."
+  
+  VOLUME:
+    type: float64
+    description: "Total trading volume in base asset units during the period."
+  
+  PREMIUM_INDEX_CLOSE:
+    type: float64
+    description: "Difference between perpetual futures contract price and spot index price at close, calculated as (Futures Price - Spot Index Price) / Spot Index Price. Positive values indicate futures trading at premium (bullish sentiment), negative values indicate discount (bearish sentiment or contango expectation)."
+  
+  PREMIUM_INDEX_OPEN:
+    type: float64
+    description: "Premium index at period open, capturing initial futures-spot divergence."
+  
+  PREMIUM_INDEX_HIGH:
+    type: float64
+    description: "Maximum premium index value during the period."
+  
+  PREMIUM_INDEX_LOW:
+    type: float64
+    description: "Minimum premium index value during the period."
+  
+  TAKER_BUY_VOLUME:
+    type: float64
+    description: "Volume executed by market buy orders (takers) that immediately match with limit sell orders in the orderbook. Represents aggressive buying pressure from market participants willing to pay the ask price for immediate execution."
+  
+  TAKER_SELL_VOLUME:
+    type: float64
+    description: "Volume executed by market sell orders (takers) that immediately match with limit buy orders in the orderbook. Represents aggressive selling pressure from market participants accepting the bid price for immediate execution."
+  
+  FUNDING_RATE:
+    type: float64
+    description: "Periodic payment rate exchanged between long and short positions every 8 hours in perpetual futures contracts. Positive rates mean longs pay shorts (indicating bullish leverage demand), negative rates mean shorts pay longs (indicating bearish leverage demand)."
+  
+  # Derived Order Flow Metrics
+  ORDER_FLOW_IMBALANCE:
+    type: float64
+    description: "Net aggressive order flow calculated as (TAKER_BUY_VOLUME - TAKER_SELL_VOLUME) / VOLUME, normalized between -1 and 1. Positive values indicate dominant buying pressure, negative values indicate dominant selling pressure, measuring directional aggression in market orders."
+  
+  TRADE_INTENSITY:
+    type: float64
+    description: "Measure of trading activity velocity, calculated as volume per unit time or price movement. High intensity indicates heightened market participation and liquidity turnover."
+  
+  # Price-Based Derived Features
+  RETURN:
+    type: float64
+    description: "Period-over-period logarithmic or simple percentage return, calculated as (CLOSE - CLOSE_prev) / CLOSE_prev."
+  
+  VWAP:
+    type: float64
+    description: "Volume-weighted average price over the period, calculated as Σ(price * volume) / Σ(volume). Represents the average execution price weighted by trade size, often used as a benchmark for institutional order execution quality."
+  
+  # Temporal Cyclical Encoding (for Neural Networks)
+  HOUR_SIN:
+    type: float64
+    description: "Sine transformation of hour (0-23) using sin(2pi * hour / 24), encoding time of day as continuous cyclical feature."
+  
+  HOUR_COS:
+    type: float64
+    description: "Cosine transformation of hour (0-23) using cos(2pi * hour / 24), complementing HOUR_SIN to preserve full temporal information without ordinal discontinuity at midnight."
+
+# Index column
+index:
+  name: close_time
+  type: datetime64[ns]
+  description: "Timestamp of the period close"

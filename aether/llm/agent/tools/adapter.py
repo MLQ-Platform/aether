@@ -4,6 +4,7 @@ from abc import abstractmethod
 from typing import Any
 from typing import Dict
 from typing import List
+from openai import AsyncOpenAI
 from openai import OpenAI
 from aether.llm.agent.tools.base import Tool
 
@@ -97,14 +98,23 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
         if not message.tool_calls:
             return []
 
-        return [
-            {
-                "id": tc.id,
-                "name": tc.function.name,
-                "arguments": json.loads(tc.function.arguments),
-            }
-            for tc in message.tool_calls
-        ]
+        tool_calls = []
+        for tc in message.tool_calls:
+            try:
+                arguments = json.loads(tc.function.arguments)
+
+                tool_calls.append(
+                    {
+                        "id": tc.id,
+                        "name": tc.function.name,
+                        "arguments": arguments,
+                    }
+                )
+
+            except json.JSONDecodeError as e:
+                print(f"[Error] Failed to parse tool arguments: {e}")
+
+        return tool_calls
 
     def has_tool_calls(self, response: Any) -> bool:
         """
@@ -153,3 +163,25 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
         최종 응답 텍스트 추출
         """
         return response.choices[0].message.content or ""
+
+
+class AsyncOpenAIToolCallAdapter(OpenAIToolCallAdapter):
+    """
+    Async OpenAI Tool Calling 어댑터
+
+    OpenAI 및 OpenAI 호환 API (OpenRouter 등)에서 사용하는 비동기 버전
+    """
+
+    def __init__(self, model: str, client: AsyncOpenAI):
+        self.model = model
+        self.client = client
+
+    async def call_with_tools(
+        self, messages: List[Dict], tools: List[Dict], **kwargs
+    ) -> Any:
+        """
+        Async OpenAI API 호출
+        """
+        return await self.client.chat.completions.create(
+            model=self.model, messages=messages, tools=tools, **kwargs
+        )

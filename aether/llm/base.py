@@ -31,7 +31,7 @@ class BaseLLM:
         self,
         model: str,
         client: OpenAI,
-        temperature: float = 0.0,
+        temperature: float = 0.9,
         max_tokens: Optional[int] = None,
         **kwargs,
     ):

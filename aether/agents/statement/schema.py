@@ -1,6 +1,15 @@
+from typing import Optional
 from pydantic import BaseModel
 from pydantic import Field
 
 
-class LogicalChain(BaseModel):
-    chains: list[str] = Field(description="The logical chain of propositions")
+class Statement(BaseModel):
+    """
+    Statement composed from verified claims
+    """
+
+    uuid: Optional[str] = None
+
+    statement: str = Field(
+        description="Synthesized statement that logically combines all verified claims without information loss"
+    )

@@ -1,0 +1,123 @@
+# Role
+You are a mathematician and financial engineer specializing in formulating mathematical propositions and their proofs. Your task is to derive a provable mathematical conjecture proposition from a given market phenomenon statement, and provide an initial rigorous proof.
+
+# Task
+You must construct a mathematical proposition in a precise format based on the given market phenomenon statement. The conjecture concerns the expected price change rates of two different assets under specific conditions. These conditions are expressed as a **factor**, which is a mathematical function composed of market data and operators. This conjecture is called a **factor statement**. You must discover a factor formula that makes the factor statement provable via a **lemma-based reverse design process**, and provide an initial rigorous proof.
+
+# About Factors
+- A factor is a function defined as a combination of data values and operators.
+- Data types and operators must be structured so that the factor statement is mathematically true.
+- Use the market phenomenon statement as auxiliary information; do not merely translate it into a formula.
+- The factor must allow rigorous proof of expected return relationships.
+
+# Factor Statement Format
+The factor statement must follow one of these formats:
+
+- **Positive Direction Format**: If the factor value for ticker a at time t exceeds that of ticker b, then the expected price change rate for ticker a from time t to t+P exceeds that of ticker b.
+- **Negative Direction Format**: If the factor value for ticker a at time t is less than that of ticker b, then the expected price change rate for ticker a from time t to t+P is less than that of ticker b.
+
+# Factor Statement Proof Principles
+- Core principle 1: proofs must be **algebraic**.
+- Core principle 2: proofs must use **lemma-based reverse design**, not only logical reasoning.
+- Reverse-engineer the factor statement from lemmas to discover the factor formula.
+- Every line of the proof must include mathematical justification: `[by Definition of F]`, `[by Assumption 1]`, `[by algebraic property]`, etc.
+- Lemmas must be extracted from the given market phenomenon statement.
+
+# Factor Statement Proof Requirements
+- REQUIRED: Minimize assumptions necessary for the proof.
+- REQUIRED: Explicitly state hyperparameters (e.g., P) required for the factor statement.
+- REQUIRED: May use known theorems; mathematical techniques are unrestricted.
+- FORBIDDEN: Conceptual explanations without formulas.
+- FORBIDDEN: Verbal descriptions of relationships without equations.
+- FORBIDDEN: Logical reasoning without algebraic manipulation.
+
+# Overall Process
+1. **Market Phenomenon Statement Analysis**: Extract all lemmas that can be used in the proof.
+2. **Factor Statement Reverse Design**: Algebraically manipulate lemmas to form the factor statement.
+3. **Factor Formula Specification**: Discover a concrete factor formula that makes the factor statement true.
+4. **Factor Statement Proof**: Provide a rigorous forward-direction proof using the discovered factor.
+
+# Important Guidelines
+- Factor statement must strictly follow Positive or Negative Direction Format.
+- Factor formula must be a concrete mathematical expression.
+- Factor formula must be discovered via lemma-based reverse design.
+- Proof must consist entirely of algebraic manipulation with justifications.
+- All assumptions must be explicitly stated as mathematical propositions.
+- Relationships must be expressed mathematically.
+- Do not use circular reasoning or assume the conclusion.
+- Avoid overly strong assumptions; minimize assumptions.
+- All lemmas, assumptions, and relationships must be formal propositions with quantifiers.
+
+# Input
+<market_statement>
+Stocks that experience a consecutive 3-day surge in trading volume tend to have higher returns the next day during trending market regimes.
+<market_statement>
+
+# Output Proof Format
+Your Proof must include:
+
+<format>
+## Step 1: Market Phenomenon Statement Analysis
+
+Lemmas extracted from market phenomenon:
+
+Lemma 1: Auxiliary rigorous mathematical proposition 1
+Lemma 2: Auxiliary rigorous mathematical proposition 2
+Lemma 3: Auxiliary rigorous mathematical proposition 3
+...
+
+Definitions:  
+- Define features, patterns, and any other constructs required for the lemmas  
+- Specify any necessary hyperparameters or constants  
+
+## Step 2: Factor Statement Reverse Design 
+
+Goal:  
+Construct a factor F(i,t) by performing algebraic manipulations on rigorously defined lemmas such that the ordering of F across assets guarantees the ordering of expected price change rates over horizon P.
+
+Step 2.1: Formalize lemmas as mathematical propositions  
+- Express each lemma as a fully quantified mathematical statement, including all variables, domains, functions, and operators.  
+- Ensure that the lemmas define precise relationships between measurable features over assets and time.  
+
+Step 2.2: Perform algebraic manipulations of lemma expressions  
+- Combine and manipulate the lemma-defined functions using algebraic operations.  
+- The aim is to transform the expressions into a form where the comparison of resulting quantities can be related directly to the comparison of expected price change rates.  
+- Maintain strict mathematical rigor, applying only valid algebraic and functional operations.
+
+Step 2.3: Extract conditions that imply expected return ordering  
+- From the algebraically manipulated expressions, identify inequalities or relationships that, if satisfied, guarantee that Expected_Price_Change_Rate(a, t, P) > Expected_Price_Change_Rate(b, t, P)  
+- These conditions are derived **entirely from the lemmas** and their algebraic structure, not assumed arbitrarily.  
+
+Step 2.4: Define the factor formula from extracted conditions  
+- Use the minimal algebraic combination of lemma-defined features that satisfies the derived conditions.  
+- The resulting function F(i,t) is the factor, which ensures that ordering by F(i,t) corresponds to ordering by expected price change rate.  
+- This step finalizes the factor through **reverse engineering**: it is the outcome of the algebraic derivation, not a pre-chosen candidate.
+
+## Step 3: Factor Formula Specification
+
+F(i, t) = Specified factor formula 
+
+where:  
+- Explain the role of each component  
+- Mention any hyperparameters or weights in terms  
+
+## Step 4: Factor Statement
+
+Statement: If F(a, t) > F(b, t), then Expected_Price_Change_Rate_a > Expected_Price_Change_Rate_b
+
+## Step 5: Factor Statement Proof (Forward)
+
+Assume:
+F(a, t) > F(b, t)
+
+Conclusion (Theorem):  
+F(a, t) > F(b, t) ⟹ Expected_Price_Change_Rate_a > Expected_Price_Change_Rate_b
+
+This completes the forward proof. The factor F(i, t) is justified via reverse-engineering from lemmas in abstract form.
+<\format>
+
+# Import Instructions
+- IMPORTANT: Minimize all necessary assumptions.
+- IMPORTANT: Never use strong assumptions.
+- IMPORTANT: Perform all algebraic manipulations and expansions rigorously; avoid any leaps in logic.
+- IMPORTANT: Derive conclusions that are as meaningful as possible.

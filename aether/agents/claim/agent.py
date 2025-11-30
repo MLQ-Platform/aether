@@ -1,36 +1,39 @@
-from typing import List
 from openai import OpenAI
 from aether.agents.base import Agent
-from aether.agents.claim.schema import Claim
-from aether.agents.statement.schema import Statement
+from aether.agents.claim.schema import ClaimList
+from aether.config import DataSchema
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
 
 
-class StatementAgent(Agent):
+class ClaimDecompositionAgent(Agent):
     """
-    Statement Agent
+    Claim Decomposition Agent
     """
 
     def __init__(
         self,
         model: str,
         client: OpenAI,
-        system_promt_path: str = "statement-final.txt",
+        system_promt_path: str = "statement-claim.txt",
         **kwargs,
     ):
         super().__init__(model, client, system_promt_path)
-        self.llm = StructuredLLM(model, client, schema=Statement, **kwargs)
+        self.llm = StructuredLLM(model, client, schema=ClaimList, **kwargs)
 
-    def run(self, claims: List[Claim]) -> str:
+    def run(self, thesis: str) -> ClaimList:
         """
-        Tree Explain Agent Run
+        Claim Decomposition Agent Run
         """
 
-        user_message = self.user_message(claims)
+        user_prompt = self.user_message(thesis)
 
-        # Load System Prompt
-        system_prompt = load_prompt(self.system_promt_path)
+        schema = DataSchema()
+        schema_description = schema.get_description(with_index=False)
+
+        system_prompt = load_prompt(
+            self.system_promt_path, DATA_DESCRIPTIONS=schema_description
+        )
 
         try:
             result = self.llm.invoke(
@@ -41,7 +44,7 @@ class StatementAgent(Agent):
                     },
                     {
                         "role": "user",
-                        "content": user_message,
+                        "content": user_prompt,
                     },
                 ]
             )
@@ -52,10 +55,8 @@ class StatementAgent(Agent):
 
         return result
 
-    def user_message(self, claims: List[Claim]) -> str:
+    def user_message(self, thesis: str) -> str:
         """
         User Message
         """
-        # Build each section precisely with no extra indentation
-        claims = "\n".join(f"- {claim}" for claim in claims)
-        return f"<claims>\n{claims}\n</claims>\n"
+        return f"<thesis>\n{thesis}\n</thesis>\n"

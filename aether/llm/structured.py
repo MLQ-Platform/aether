@@ -2,6 +2,8 @@ import json
 import re
 from typing import Optional
 from typing import TypeVar
+from typing import Union
+from openai import AsyncOpenAI
 from openai import OpenAI
 from pydantic import BaseModel
 from pydantic import ValidationError
@@ -38,7 +40,7 @@ class StructuredLLM:
     def __init__(
         self,
         model: str,
-        client: OpenAI,
+        client: Union[OpenAI, AsyncOpenAI],
         schema: type[BaseModel],
         temperature: float = 0.0,
         max_tokens: Optional[int] = None,
@@ -47,7 +49,7 @@ class StructuredLLM:
     ):
         """
         Args:
-            client: OpenAI 클라이언트 (OpenAI 호환 API 모두 가능)
+            client: OpenAI 클라이언트 (OpenAI 호환 API 모두 가능, sync 또는 async)
             schema: Pydantic 모델 클래스
             model: 모델명
             temperature: 생성 온도
@@ -126,6 +128,69 @@ class StructuredLLM:
                     )
 
         raise RuntimeError("Unexpected error in invoke")
+
+    async def invoke_async(self, messages: Messages, **kwargs) -> BaseModel:
+        """
+        Async 구조화된 출력 생성
+
+        Args:
+            messages: 메시지 리스트 (시스템 메시지 포함 가능)
+            **kwargs: 추가 파라미터
+
+        Returns:
+            검증된 Pydantic 모델 인스턴스
+        """
+        if not isinstance(self.client, AsyncOpenAI):
+            raise ValueError("invoke_async requires AsyncOpenAI client")
+
+        params = self._prepare_params(kwargs)
+        json_schema = self.schema.model_json_schema()
+
+        # JSON 스키마 지시사항
+        json_instruction = (
+            "You must respond with ONLY valid JSON. "
+            "Do NOT include any markdown formatting, code blocks, or explanations. "
+            "Output ONLY the raw JSON object.\n\n"
+            f"Required JSON Schema:\n{json.dumps(json_schema, indent=2)}"
+        )
+
+        # 메시지 처리: 기존 시스템 메시지가 있으면 병합, 없으면 새로 생성
+        full_messages = self._prepare_messages(messages, json_instruction)
+
+        for attempt in range(self.max_retries):
+            try:
+                # response_format은 선택적으로 사용 (일부 모델은 지원 안 함)
+                create_params = {
+                    "model": self.model,
+                    "messages": full_messages,
+                    **params,
+                }
+
+                completion = await self.client.chat.completions.create(**create_params)
+                content = completion.choices[0].message.content
+
+                # 마크다운 코드 블록 제거
+                json_string = self._extract_json(content)
+                data = json.loads(json_string)
+                return self.schema(**data)
+
+            except (json.JSONDecodeError, ValidationError) as e:
+                if attempt < self.max_retries - 1:
+                    full_messages.append({"role": "assistant", "content": content})
+                    full_messages.append(
+                        {
+                            "role": "user",
+                            "content": f"Invalid response. Error: {str(e)}\nPlease respond with valid JSON matching the schema.",
+                        }
+                    )
+                else:
+                    raise ValueError(
+                        f"Failed to generate valid structured output after {self.max_retries} attempts.\n"
+                        f"Last error: {e}\n"
+                        f"Last response: {content[:200]}..."
+                    )
+
+        raise RuntimeError("Unexpected error in invoke_async")
 
     def _extract_json(self, text: str) -> str:
         """
