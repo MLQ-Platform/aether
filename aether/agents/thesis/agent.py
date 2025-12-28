@@ -21,7 +21,7 @@ class ThesisRevealingAgent(Agent):
         super().__init__(model, client, system_promt_path)
         self.llm = StructuredLLM(model, client, schema=Thesis, **kwargs)
 
-    def run(self, tree_a: ClauseTree, tree_b: ClauseTree) -> str:
+    def run(self, tree_a: ClauseTree, tree_b: ClauseTree) -> Thesis:
         """
         Tree Explain Agent Run
         """

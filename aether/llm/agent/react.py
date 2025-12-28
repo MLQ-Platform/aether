@@ -117,7 +117,11 @@ class ReactAgent:
         return final_content
 
     async def run_async(
-        self, query: str, system_prompt: Optional[str] = None, **kwargs
+        self,
+        query: str,
+        system_prompt: Optional[str] = None,
+        exec_context: Optional[dict] = {},
+        **kwargs,
     ) -> str:
         """
         Async Agent 실행
@@ -148,8 +152,6 @@ class ReactAgent:
 
         # Timeout for tool execution (30 seconds)
         TOOL_TIMEOUT = 30
-        # Execution context for coroutine
-        exec_context = None
 
         # ReAct Loop
         for iteration in range(self.max_iterations):

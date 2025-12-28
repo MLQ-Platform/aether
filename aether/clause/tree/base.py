@@ -1,4 +1,6 @@
 from anytree import RenderTree
+from aether.clause.nodes.base import Node
+from aether.utils import generate_uuid
 
 
 class ClauseTree:
@@ -12,6 +14,7 @@ class ClauseTree:
         self.name = name
         self.nodes = []
         self.depth = 0
+        self.tree_id = generate_uuid()
 
     @property
     def root(self):
@@ -108,3 +111,52 @@ class ClauseTree:
 
     def __call__(self, *args, **kwargs):
         return self.evaluate()
+
+    def to_dict(self) -> dict:
+        """
+        ClauseTree를 딕셔너리로 변환
+        """
+
+        node_to_index = {id(node): idx for idx, node in enumerate(self.nodes)}
+
+        serialized_nodes = [
+            {
+                **node.to_dict(),
+                "parent_idx": node_to_index.get(id(node.parent))
+                if node.parent
+                else None,
+            }
+            for node in self.nodes
+        ]
+
+        return {
+            "name": self.name,
+            "depth": self.depth,
+            "nodes": serialized_nodes,
+            "root_idx": 0 if self.root else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ClauseTree":
+        """
+        딕셔너리에서 ClauseTree 인스턴스 생성
+        """
+
+        tree = cls(name=data["name"])
+
+        if not data["nodes"]:
+            return tree
+
+        # 노드 생성 (각 노드의 from_dict 사용)
+        nodes = [Node.from_dict(node_data) for node_data in data["nodes"]]
+
+        # parent-child 관계 설정
+        for idx, node_data in enumerate(data["nodes"]):
+            if node_data["parent_idx"] is not None:
+                nodes[idx].parent = nodes[node_data["parent_idx"]]
+
+        tree.nodes = nodes
+        tree._root = nodes[data["root_idx"]] if data["root_idx"] is not None else None
+        tree._currnode = tree._root
+        tree.depth = data["depth"]
+        return tree

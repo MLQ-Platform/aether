@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 from typing import Set
 import networkx as nx
 import numpy as np
@@ -25,10 +26,12 @@ class SubgraphExtractor:
         cls.RESTART_PROB = restart_prob
         cls.LENGTH_FACTOR = length_factor
 
-    def extract(self, size: int, start_node: str) -> ClauseGraph:
+    def extract(self, size: int, start_node: Optional[int] = None) -> ClauseGraph:
         """
         Extract subgraph using random walk
         """
+        if start_node is None:
+            start_node = random.choice(list(self.graph.clause_trees.keys()))
 
         if (
             size <= 0
@@ -41,7 +44,7 @@ class SubgraphExtractor:
         subgraph = self._build(visited)
         return subgraph
 
-    def _traverse(self, size: int, start: str) -> Set[str]:
+    def _traverse(self, size: int, start: int) -> Set[int]:
         """
         Perform random walk to collect nodes
         """
@@ -73,32 +76,34 @@ class SubgraphExtractor:
 
             if total > 0:
                 probs = [w / total for w in weights]
-                current = np.random.choice(neighbors, p=probs)
+                current = int(np.random.choice(neighbors, p=probs))
             else:
                 current = random.choice(neighbors)
 
-            visited.add(str(current))
+            visited.add(current)
 
         logger.info(f"Random walk completed. Final size: {len(visited)}")
         return visited
 
-    def _build(self, nodes: Set[str]) -> nx.Graph:
+    def _build(self, node_ids: Set[int]) -> ClauseGraph:
         """
-        Build NetworkX subgraph from nodes
+        Build ClauseGraph subgraph from nodes
         """
-        trees = [self.graph.clause_trees[node] for node in nodes]
+        subgraph = ClauseGraph()
+        node_list = list(node_ids)  # Set을 list로 변환
 
-        tree_id = generate_uuid()
-        subgraph = ClauseGraph(tree_id)
-        subgraph.add_clause_trees(trees, nodes)
-
-        node_list = list(subgraph.clause_trees.keys())
-
-        for i, n1 in enumerate(node_list):
-            for n2 in node_list[i + 1 :]:
-                weight = self.graph.get_edge_weight(n1, n2)
+        for i, node_id1 in enumerate(node_list):
+            for node_id2 in node_list[i + 1 :]:
+                weight = self.graph.get_edge_weight(node_id1, node_id2)
 
                 if weight is not None:
-                    subgraph.add_edge(n1, n2, weight=weight)
+                    subgraph.graph.add_node(node_id1)
+                    subgraph.graph.add_node(node_id2)
+                    subgraph.graph.add_edge(node_id1, node_id2, weight=weight)
+                    subgraph.clause_trees[node_id1] = self.graph.clause_trees[node_id1]
+                    subgraph.clause_trees[node_id2] = self.graph.clause_trees[node_id2]
 
+        logger.info(
+            f"Built subgraph with {subgraph.num_nodes} nodes and {subgraph.num_edges} edges"
+        )
         return subgraph

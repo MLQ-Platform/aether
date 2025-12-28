@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 import pandas as pd
 from aether.clause.nodes.base import Node
@@ -14,7 +15,7 @@ class DATA(Node):
         self,
         label: str,
         ticker: str,
-        provider: InMemoryDataProvider,
+        provider: Optional[InMemoryDataProvider] = None,
     ):
         super(DATA, self).__init__(
             input_types=[],
@@ -29,9 +30,19 @@ class DATA(Node):
     def name(self):
         return type(self).__name__ + f"[{self.label}]"
 
+    @property
+    def params(self) -> dict:
+        return {
+            "label": self.label,
+            "ticker": self.ticker,
+        }
+
     def activate(self):
+        if not self.provider:
+            raise ValueError("No provider provided")
+
         if not self.provider.has(self.ticker):
-            raise ValueError(f"No Data for {self.ticker}")
+            raise ValueError(f"No data for {self.ticker}")
 
         return self.provider.get(self.ticker)[self.label]
 
@@ -53,6 +64,10 @@ class SMA(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).mean()
 
@@ -68,6 +83,10 @@ class ADD(Node):
             output_type=NodeIOTypes.FLOAT,
             max_childs=2,
         )
+
+    @property
+    def params(self) -> dict:
+        return {}
 
     def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
         return seq1 + seq2
@@ -90,6 +109,10 @@ class SHIFT(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.shift(self.period)
 
@@ -110,6 +133,10 @@ class DIFF(Node):
     @property
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
+
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.diff(self.period)
@@ -132,6 +159,10 @@ class PctChange(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.pct_change(self.period, fill_method=None).ffill()
 
@@ -147,6 +178,10 @@ class ShiftSign(Node):
             output_type=NodeIOTypes.FLOAT,
             max_childs=1,
         )
+
+    @property
+    def params(self) -> dict:
+        return {}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         return -seq
@@ -164,6 +199,10 @@ class ABS(Node):
             max_childs=1,
         )
 
+    @property
+    def params(self) -> dict:
+        return {}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return np.abs(seq)
 
@@ -179,6 +218,10 @@ class DIV(Node):
             output_type=NodeIOTypes.FLOAT,
             max_childs=2,
         )
+
+    @property
+    def params(self) -> dict:
+        return {}
 
     def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
         return seq1 / (seq2 + 1e-10)
@@ -196,6 +239,10 @@ class SUB(Node):
             max_childs=2,
         )
 
+    @property
+    def params(self) -> dict:
+        return {}
+
     def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
         return seq1 - seq2
 
@@ -211,6 +258,10 @@ class Comparison(Node):
             output_type=NodeIOTypes.BINARY,
             max_childs=2,
         )
+
+    @property
+    def params(self) -> dict:
+        return {}
 
     def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
         return seq1 > seq2
@@ -233,6 +284,10 @@ class NewHigh(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).max() == seq
 
@@ -254,6 +309,10 @@ class NewLow(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).min() == seq
 
@@ -274,6 +333,10 @@ class ZSCORE(Node):
     @property
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
+
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         rolling_mean = seq.rolling(self.period).mean()
@@ -299,6 +362,10 @@ class STD(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).std()
 
@@ -320,6 +387,10 @@ class MAX(Node):
     @property
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
+
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).max()
@@ -343,6 +414,10 @@ class MIN(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).min()
 
@@ -363,6 +438,10 @@ class SKEW(Node):
     @property
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
+
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).skew()
@@ -385,6 +464,10 @@ class KURT(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq.rolling(self.period).kurt()
 
@@ -406,6 +489,10 @@ class LargerThan(Node):
     def name(self):
         return type(self).__name__ + f"(n={self.n})"
 
+    @property
+    def params(self) -> dict:
+        return {"n": self.n}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq > self.n
 
@@ -426,6 +513,10 @@ class SmallerThan(Node):
     @property
     def name(self):
         return type(self).__name__ + f"(n={self.n})"
+
+    @property
+    def params(self) -> dict:
+        return {"n": self.n}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         return seq < self.n
@@ -453,6 +544,10 @@ class ZBetween(Node):
             + f"(p={self.period}, lo={round(self.lo, 4)}, hi={round(self.hi, 4)})"
         )
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period, "lo": self.lo, "hi": self.hi}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         rolling_mean = seq.rolling(self.period).mean()
         rolling_std = seq.rolling(self.period).std()
@@ -477,6 +572,10 @@ class EqualApprox(Node):
     def name(self):
         return type(self).__name__ + "()"
 
+    @property
+    def params(self) -> dict:
+        return {"tol": self.tol}
+
     def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
         return (seq1 - seq2).abs() <= self.tol
 
@@ -498,11 +597,17 @@ class ZEXP(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         rolling_mean = seq.rolling(self.period).mean()
         rolling_std = seq.rolling(self.period).std()
         zscore = (seq - rolling_mean) / (rolling_std + 1e-5)
-        return np.exp(zscore)
+        # Clip z-score to prevent overflow: exp(20) ≈ 4.85e8, exp(-20) ≈ 2.06e-9
+        zscore_clipped = np.clip(zscore, -20, 20)
+        return np.exp(zscore_clipped)
 
 
 class ZSigmoid(Node):
@@ -523,11 +628,17 @@ class ZSigmoid(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         rolling_mean = seq.rolling(self.period).mean()
         rolling_std = seq.rolling(self.period).std()
         zscore = (seq - rolling_mean) / (rolling_std + 1e-5)
-        return 1.0 / (1.0 + np.exp(-zscore))
+        # Clip z-score to prevent overflow in sigmoid: exp(20) and exp(-20) are safe bounds
+        zscore_clipped = np.clip(zscore, -15, 15)
+        return 1.0 / (1.0 + np.exp(-zscore_clipped))
 
 
 class CrossUp(Node):
@@ -541,6 +652,10 @@ class CrossUp(Node):
             output_type=NodeIOTypes.BINARY,
             max_childs=2,
         )
+
+    @property
+    def params(self) -> dict:
+        return {}
 
     def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
         return (seq1 > seq2) & (seq1.shift(1) <= seq2.shift(1))
@@ -557,6 +672,10 @@ class CrossDown(Node):
             output_type=NodeIOTypes.BINARY,
             max_childs=2,
         )
+
+    @property
+    def params(self) -> dict:
+        return {}
 
     def activate(self, seq1: pd.Series, seq2: pd.Series) -> pd.Series:
         return (seq1 < seq2) & (seq1.shift(1) >= seq2.shift(1))
@@ -578,6 +697,10 @@ class UpStreak(Node):
     @property
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
+
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         inc = (seq.diff() > 0).astype(int)
@@ -606,6 +729,10 @@ class DownStreak(Node):
     @property
     def name(self):
         return type(self).__name__ + f"(p={self.period})"
+
+    @property
+    def params(self) -> dict:
+        return {"period": self.period}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         dec = (seq.diff() < 0).astype(int)
@@ -647,6 +774,15 @@ class MeanRevertKick(Node):
             type(self).__name__
             + f"(p={self.period}, z_th={round(self.z_th, 3)}, dmax={self.dmax})"
         )
+
+    @property
+    def params(self) -> dict:
+        return {
+            "period": self.period,
+            "z_th": self.z_th,
+            "dmax": self.dmax,
+            "eps": self.eps,
+        }
 
     def activate(self, seq: pd.Series) -> pd.Series:
         """
@@ -690,6 +826,10 @@ class PullbackWithinBand(Node):
     def name(self):
         return type(self).__name__ + f"(p={self.period}, k={round(self.k, 3)})"
 
+    @property
+    def params(self) -> dict:
+        return {"period": self.period, "k": self.k}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         mu = seq.rolling(self.period, min_periods=self.period).mean()
         sd = seq.rolling(self.period, min_periods=self.period).std()
@@ -724,6 +864,10 @@ class DrawdownExceed(Node):
     def name(self):
         return type(self).__name__ + f"(pct={round(self.pct, 3)}, lb={self.lookback})"
 
+    @property
+    def params(self) -> dict:
+        return {"pct": self.pct, "lookback": self.lookback}
+
     def activate(self, seq: pd.Series) -> pd.Series:
         roll_max = seq.rolling(self.lookback, min_periods=self.lookback).max()
         dd = 1.0 - (seq / roll_max)
@@ -749,6 +893,10 @@ class JumpDetect(Node):
     @property
     def name(self):
         return type(self).__name__ + f"(p={self.period}, tail={round(self.q_tail, 3)})"
+
+    @property
+    def params(self) -> dict:
+        return {"period": self.period, "q_tail": self.q_tail}
 
     def activate(self, seq: pd.Series) -> pd.Series:
         r = seq.diff().abs()

@@ -85,7 +85,3 @@ class ToolRegistry:
             return func
 
         return wrapper
-
-
-# 전역 레지스트리 인스턴스
-registry = ToolRegistry()

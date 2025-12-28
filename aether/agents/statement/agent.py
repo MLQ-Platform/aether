@@ -24,7 +24,7 @@ class StatementAgent(Agent):
 
     def run(self, claims: List[Claim]) -> str:
         """
-        Tree Explain Agent Run
+        Statement Agent Run
         """
 
         user_message = self.user_message(claims)

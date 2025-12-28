@@ -1,6 +1,7 @@
 import inspect
 from typing import List
 from anytree import NodeMixin
+from aether.clause import nodes
 
 
 class NodeIOTypes:
@@ -41,6 +42,10 @@ class Node(NodeMixin):
     def full(self):
         return len(self.childs) >= self.max_childs
 
+    @property
+    def params(self) -> dict:
+        raise NotImplementedError
+
     def add_child(self, child: NodeMixin):
         child.set_parent(self)
         self.childs.append(child)
@@ -55,3 +60,14 @@ class Node(NodeMixin):
         if not self.full:
             raise ValueError("can't propagate through this node if not node.full")
         return self.activate(*[c.propagate() for c in self.childs])
+
+    def to_dict(self) -> dict:
+        return {
+            "class": type(self).__name__,
+            "params": self.params,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        node_class = getattr(nodes, data["class"])
+        return node_class(**data["params"])

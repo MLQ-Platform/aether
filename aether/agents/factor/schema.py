@@ -35,3 +35,13 @@ class ProofRevision(BaseModel):
     is_pass: bool = Field(
         description="PASS only if the proof has minimal or no revision items remaining. FAIL otherwise (if any revision items remain unaddressed or if the proof still requires significant modifications).",
     )
+
+
+class FactorCode(BaseModel):
+    """
+    Factor Code
+    """
+
+    code: str = Field(
+        description="The code implementation of the factor formula in Python.",
+    )

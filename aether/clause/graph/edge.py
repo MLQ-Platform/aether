@@ -55,10 +55,30 @@ class SUEdgeCalculator(EdgeCalculator):
         - 상호정보량: I(A;B) = H(A) + H(B) - H(A,B)
         - 대칭 불확실성: SU = 2*I / (H(A)+H(B))   (분모가 0이면 SU=0)
 
+        SU (Symmetrical Uncertainty) 의미:
+        - SU는 두 변수 간의 정보 공유 정도를 정규화한 지표입니다.
+        - 상호정보량(MI)을 두 변수의 엔트로피 합으로 정규화하여 [0, 1] 범위로 스케일링합니다.
+        - 대칭적: SU(A,B) = SU(B,A)
+        - 범위: [0, 1]
+            * SU = 0: 두 변수가 독립적 (정보 공유 없음)
+            * SU = 1: 두 변수가 완전히 의존적 (한 변수가 다른 변수를 완전히 결정)
+
+        통계적 해석 가이드라인:
+        - SU < 0.1: 약한 연관성 (weak association)
+        - 0.1 ≤ SU < 0.3: 중간 연관성 (moderate association)
+        - 0.3 ≤ SU < 0.5: 강한 연관성 (strong association)
+        - SU ≥ 0.5: 매우 강한 연관성 (very strong association)
+
+        주의사항:
+        - SU는 효과 크기(effect size)를 나타내지만, 통계적 유의성은 별도로 검정해야 합니다.
+        - 작은 샘플 크기에서는 높은 SU 값도 우연일 수 있으므로, 충분한 데이터 포인트(T)가 필요합니다.
+        - alpha > 0을 사용하면 작은 샘플에서 더 안정적이지만, 약간의 편향을 도입할 수 있습니다.
+        - 일반적으로 T ≥ 100 이상에서 해석하는 것이 권장됩니다.
+
         매개변수:
-        a, b     : bool dtype의 pd.Series. NaN은 공통 유효구간으로 마스킹.
-        alpha    : 라플라스 스무딩 파라미터(권장 0.5~1.0).
-        log_base : 로그 밑 (기본값 e). 2 또는 10 등으로 변경 가능.
+        series_a, series_b: bool dtype의 pd.Series. NaN은 공통 유효구간으로 마스킹.
+        alpha: 라플라스 스무딩 파라미터(권장 0.5~1.0). 작은 샘플에서 안정성을 높입니다.
+        detail: True이면 SU 외에 H_A, H_B, H_AB, MI, T, counts, p_table을 포함한 dict 반환.
         """
 
         if not isinstance(series_a, pd.Series) or not isinstance(series_b, pd.Series):

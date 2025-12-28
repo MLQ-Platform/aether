@@ -1,29 +1,11 @@
 from contextlib import redirect_stdout
 from io import StringIO
-from aether.llm.agent.tools.registry import registry
-from aether.provider import InMemoryDataProvider
-
-provider = InMemoryDataProvider()
+from aether.llm.agent.tools.base import Tool
 
 
-@registry.decorator(
-    name="execute_python",
-    description="Execute Python code for data analysis with 30s timeout. Available in context: df (DataFrame with market data), pd (pandas), np (numpy), sp (scipy). Variables defined in previous executions within the same agent iteration persist across calls. The code should assign results to a variable named 'result' which will be returned.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "code": {
-                "type": "string",
-                "description": "Python code to execute. Must assign final output to 'result' variable. Variables defined in previous executions within the same agent iteration persist (df, pd, np, sp are pre-imported).",
-            }
-        },
-        "required": ["code"],
-    },
-    agent_name="rationale",
-)
-def execute_python(code: str, exec_context: dict = None) -> tuple[str, dict]:
+def pyexecutor(code: str, exec_context: dict = {}) -> tuple[str, dict]:
     """
-    Execute Python code in a controlled environment with persistent context
+    Python Code Executor
 
     Args:
         code: Python code to execute
@@ -31,24 +13,18 @@ def execute_python(code: str, exec_context: dict = None) -> tuple[str, dict]:
                       Context persists across iterations within the same coroutine (claim)
     """
 
-    df = provider.get("BTCUSDT")
-
-    if df is None:
-        # Return tuple even for errors
+    if "df" not in exec_context:
         error_msg = "Error: DataFrame 'df' not found in context"
-        return error_msg, exec_context if exec_context is not None else {}
+        return error_msg, exec_context
 
-    if exec_context is None:
+    if "np" not in exec_context:
         import numpy as np
         import pandas as pd
         import scipy as sp
 
-        exec_context = {
-            "df": df,
-            "pd": pd,
-            "np": np,
-            "sp": sp,
-        }
+        exec_context["np"] = np
+        exec_context["pd"] = pd
+        exec_context["sp"] = sp
 
     # Reset result for each execution
     exec_context["result"] = None
@@ -76,3 +52,22 @@ def execute_python(code: str, exec_context: dict = None) -> tuple[str, dict]:
 
     output = "\n".join(output_parts)
     return output, exec_context
+
+
+tools = [
+    Tool(
+        name="pyexecutor",
+        description="Execute Python code for data analysis with 30s timeout. Available in context: df (DataFrame with market data), pd (pandas), np (numpy), sp (scipy). Variables defined in previous executions within the same agent iteration persist across calls. The code should assign results to a variable named 'result' which will be returned.",
+        func=pyexecutor,
+        parameters={
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "Python code to execute. Must assign final output to 'result' variable. Variables defined in previous executions within the same agent iteration persist (df, pd, np, sp are pre-imported).",
+                }
+            },
+            "required": ["code"],
+        },
+    )
+]

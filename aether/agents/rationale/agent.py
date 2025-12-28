@@ -7,7 +7,6 @@ from aether.agents.claim.schema import Claim
 from aether.agents.rationale.schema import Rationale
 from aether.config import DataSchema
 from aether.llm.agent import AsyncOpenAIToolCallAdapter
-from aether.llm.agent import OpenAIToolCallAdapter
 from aether.llm.agent import ReactAgent
 from aether.llm.agent import Tool
 from aether.llm.prompt import load_prompt
@@ -25,31 +24,22 @@ class RationaleAgent(Agent):
         client: Union[OpenAI, AsyncOpenAI],
         tools: List[Tool],
         system_promt_path: str = "statement-rationale.txt",
-        use_async: bool = False,
         **kwargs,
     ):
         super().__init__(model, client, system_promt_path)
 
-        self.use_async = use_async
         self.client = client
-
-        if use_async:
-            if not isinstance(client, AsyncOpenAI):
-                raise ValueError("use_async=True requires AsyncOpenAI client")
-            self.adapter = AsyncOpenAIToolCallAdapter(model, client)
-        else:
-            if not isinstance(client, OpenAI):
-                raise ValueError("use_async=False requires OpenAI client")
-            self.adapter = OpenAIToolCallAdapter(model, client)
-
+        self.adapter = AsyncOpenAIToolCallAdapter(model, client)
         # code execution agent
         self.agent = ReactAgent(self.adapter, tools, **kwargs)
         # structured llm
         self.structured_llm = StructuredLLM(model, client, schema=Rationale)
 
-    def run(self, claim: Claim, to_schema: bool = True) -> str:
+    async def run_async(
+        self, claim: Claim, exec_context: dict = {}
+    ) -> Union[str, Rationale]:
         """
-        Rationale Generation Agent Run
+        Async Rationale Generation Agent Run
         """
         schema = DataSchema()
         schema_description = schema.get_description(with_index=True)
@@ -62,18 +52,33 @@ class RationaleAgent(Agent):
         )
 
         try:
-            result = self.agent.run(
+            result = await self.agent.run_async(
                 query=user_message,
                 system_prompt=system_prompt,
+                exec_context=exec_context,
             )
 
-            if to_schema:
-                result = self.to_schema(result)
+            result = await self.to_schema_async(result)
 
         except Exception as e:
             print(f"LLM Invoke Error: {e}")
             return None
 
+        return result
+
+    async def to_schema_async(self, rationale: str) -> Rationale:
+        """
+        Async Answer to Rationale Schema
+        """
+
+        result = await self.structured_llm.invoke_async(
+            messages=[
+                {
+                    "role": "user",
+                    "content": rationale,
+                }
+            ]
+        )
         return result
 
     def user_message(self, claim: Claim) -> str:
@@ -94,55 +99,6 @@ class RationaleAgent(Agent):
         """
 
         result = self.structured_llm.invoke(
-            messages=[
-                {
-                    "role": "user",
-                    "content": rationale,
-                }
-            ]
-        )
-        return result
-
-    async def run_async(
-        self, claim: Claim, to_schema: bool = True
-    ) -> Union[str, Rationale]:
-        """
-        Async Rationale Generation Agent Run
-        """
-        if not self.use_async:
-            raise ValueError("run_async requires use_async=True in __init__")
-
-        schema = DataSchema()
-        schema_description = schema.get_description(with_index=True)
-
-        # User Message
-        user_message = self.user_message(claim)
-        # Load System Prompt
-        system_prompt = load_prompt(
-            self.system_promt_path, DATA_SCHEMA=schema_description
-        )
-
-        try:
-            result = await self.agent.run_async(
-                query=user_message,
-                system_prompt=system_prompt,
-            )
-
-            if to_schema:
-                result = await self.to_schema_async(result)
-
-        except Exception as e:
-            print(f"LLM Invoke Error: {e}")
-            return None
-
-        return result
-
-    async def to_schema_async(self, rationale: str) -> Rationale:
-        """
-        Async Answer to Rationale Schema
-        """
-
-        result = await self.structured_llm.invoke_async(
             messages=[
                 {
                     "role": "user",

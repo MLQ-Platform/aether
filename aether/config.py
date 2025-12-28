@@ -1,5 +1,24 @@
+from dataclasses import dataclass
 from pathlib import Path
 import yaml
+
+
+@dataclass
+class Config:
+    BASE_URL: str = None
+    API_KEY: str = None
+
+    def __post_init__(self):
+        import os
+        import dotenv
+
+        dotenv.load_dotenv(dotenv_path="config/.env")
+
+        if self.BASE_URL is None:
+            self.BASE_URL = "https://openrouter.ai/api/v1"
+
+        if self.API_KEY is None:
+            self.API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
 class DataSchema:

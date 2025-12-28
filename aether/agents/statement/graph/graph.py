@@ -9,7 +9,7 @@ class StatementGraph:
     """
 
     def __init__(self):
-        self.nodes: Dict[str, Node] = {}
+        self.nodes: Dict[int, Node] = {}
 
     def add_nodes(self, nodes: List[Node]):
         """
@@ -24,7 +24,7 @@ class StatementGraph:
         """
         self.nodes[node.node_id] = node
 
-    def add_edge(self, from_id: str, to_id: str):
+    def add_edge(self, from_id: int, to_id: int):
         """
         Add an edge to the graph
         """

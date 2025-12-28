@@ -1,5 +1,6 @@
 import os
 from typing import Dict
+from typing import List
 from typing import NewType
 from typing import Optional
 import pandas as pd
@@ -65,6 +66,12 @@ class InMemoryDataProvider:
         """
         if key not in InMemoryDataProvider._store:
             InMemoryDataProvider._store[key] = df
+
+    def get_tickers(self) -> List[Ticker]:
+        """
+        티커 리스트 조회
+        """
+        return list(InMemoryDataProvider._store.keys())
 
     def read_parquet(self, path: str) -> pd.DataFrame:
         """

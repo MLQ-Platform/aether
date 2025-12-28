@@ -1,15 +1,10 @@
 import asyncio
-import time
 from typing import List
-from typing import Optional
 from typing import Tuple
 from pydantic import BaseModel
 from aether import factory
 from aether.agents.claim.schema import Claim
 from aether.agents.claim.schema import ClaimList
-from aether.agents.factor.schema import FactorCode
-from aether.agents.factor.schema import FactorStatement
-from aether.agents.factor.schema import ProofRevision
 from aether.agents.rationale.schema import Rationale
 from aether.agents.statement.graph import StatementGraph
 from aether.agents.statement.graph.node import Node
@@ -17,59 +12,13 @@ from aether.agents.statement.schema import Statement
 from aether.agents.thesis.schema import Thesis
 from aether.clause.graph import ClauseGraph
 from aether.clause.tree.base import ClauseTree
-from aether.clause.tree.generator import ClauseGenerator
 from aether.provider import InMemoryDataProvider
 from aether.utils import add_uuid
 from aether.utils import generate_uuid
 
 
-def generate_statement_graph(
-    instances: List[BaseModel],
-    edges: List[Tuple[str, str]],
-) -> StatementGraph:
-    graph = StatementGraph()
-
-    for instance in instances:
-        node = Node(
-            instance=instance,
-            node_type=type(instance),
-            node_id=instance.uuid,
-        )
-        graph.add_node(node)
-
-    for edge in edges:
-        graph.add_edge(*edge)
-
-    return graph
-
-
-def generate_trees(
-    generator: ClauseGenerator,
-    max_depth: int = 3,
-    num_trees: int = 10,
-) -> List[ClauseTree]:
-    trees = []
-
-    while len(trees) < num_trees:
-        tree = generator.generate(max_depth=max_depth)
-        tree.name = str(generate_uuid())
-
-        if tree.iscompleted and tree.depth == max_depth:
-            trees.append(tree)
-
-    return trees
-
-
-def generate_clause(
-    trees: List[ClauseTree], clause_graph: Optional[ClauseGraph] = None
-) -> ClauseGraph:
-    from aether.clause.graph.edge import SUEdgeCalculator
-
-    if not clause_graph:
-        clause_graph = ClauseGraph(name="Graph")
-    clause_graph.set_edge_calculator(SUEdgeCalculator.calculate)
-    clause_graph.add_clause_trees(trees)
-    clause_graph.compute_all_edges()
+def load_clause_graph(filepath: str) -> ClauseGraph:
+    clause_graph = ClauseGraph.load(filepath)
     return clause_graph
 
 
@@ -84,6 +33,7 @@ def generate_sub_clause(clause_graph: ClauseGraph) -> ClauseGraph:
 def generate_thesis(tree_a: ClauseTree, tree_b: ClauseTree) -> Thesis:
     thesis_agent = factory.get_thesis_agent()
     thesis = thesis_agent.run(tree_a, tree_b)
+    thesis.uuid = generate_uuid()
     return thesis
 
 
@@ -92,14 +42,6 @@ def generate_claims(thesis: Thesis) -> ClaimList:
     claims = claim_agent.run(thesis.thesis)
     claims = add_uuid(claims.claims)
     return claims
-
-
-def generate_statement(statement_graph: StatementGraph) -> Statement:
-    statement_agent = factory.get_statement_agent()
-
-    final_claims = get_final_claims(statement_graph)
-    statement = statement_agent.run(final_claims)
-    return statement
 
 
 def get_final_claims(statement_graph: StatementGraph) -> List[Claim]:
@@ -120,32 +62,33 @@ def get_final_claims(statement_graph: StatementGraph) -> List[Claim]:
     return final_claims
 
 
-def generate_initial_factor_statement(statement: Statement) -> FactorStatement:
-    initial_factor_agent = factory.get_initial_factor_agent()
-    initial_factor_statement = initial_factor_agent.run(statement.statement)
-    return initial_factor_statement
+def generate_statement(statement_graph: StatementGraph) -> Statement:
+    statement_agent = factory.get_statement_agent()
+
+    final_claims = get_final_claims(statement_graph)
+    statement = statement_agent.run(final_claims)
+    statement.uuid = generate_uuid()
+    return statement
 
 
-def generate_proof_check(factor_statement: FactorStatement) -> ProofRevision:
-    proof_check_agent = factory.get_proof_check_agent()
-    proof_revision = proof_check_agent.run(factor_statement.proof)
-    return proof_revision
+def generate_statement_graph(
+    instances: List[BaseModel],
+    edges: List[Tuple[str, str]],
+) -> StatementGraph:
+    graph = StatementGraph()
 
+    for instance in instances:
+        node = Node(
+            instance=instance,
+            node_type=type(instance),
+            node_id=instance.uuid,
+        )
+        graph.add_node(node)
 
-def generate_fiexd_fator_statement(
-    initial_factor_statement: FactorStatement, revision: ProofRevision
-) -> FactorStatement:
-    proof_fix_agent = factory.get_proof_fix_agent()
-    fixed_factor_statement = proof_fix_agent.run(
-        initial_factor_statement.proof, revision
-    )
-    return fixed_factor_statement
+    for edge in edges:
+        graph.add_edge(*edge)
 
-
-def generate_factor_code(factor_statement: FactorStatement) -> FactorCode:
-    factor_code_agent = factory.get_factor_code_agent()
-    factor_code = factor_code_agent.run(factor_statement.proof)
-    return factor_code
+    return graph
 
 
 async def generate_rationales_async(
@@ -184,17 +127,12 @@ async def generate_rationales_modify_async(
     return claims
 
 
-async def main(TOTAL_ITERATIONS: int = 4):
-    start = time.time()
-
+async def main(TOTAL_ITERATIONS: int = 4, graph_filepath: str = "clause-graph-v1.json"):
     provider = factory.get_provider()
-    clause_generator = factory.get_clause_generator(provider=provider)
 
-    # Tree 랜덤 생성
-    trees = generate_trees(clause_generator)
-    # Tree로 Clause Graph 생성
-    clause = generate_clause(trees)
-    # Clause 에서 Sub-Clause 랜덤워크 추출
+    # Clause Graph 로드
+    clause = load_clause_graph(graph_filepath)
+    # Clause Graph에서 Sub-Clause 추출
     subclause = generate_sub_clause(clause)
     # Thesis 생성
     thesis = generate_thesis(*subclause.clause_trees.values())
@@ -208,7 +146,6 @@ async def main(TOTAL_ITERATIONS: int = 4):
 
     instances.append(thesis)
     instances.extend(claims)
-
     edges.extend([(thesis.uuid, c.uuid) for c in claims])
 
     for i in range(TOTAL_ITERATIONS):
@@ -246,28 +183,10 @@ async def main(TOTAL_ITERATIONS: int = 4):
 
         claims = modified_claims
 
-    statement_graph = generate_statement_graph(instances, edges)
+    statement_graph: StatementGraph = generate_statement_graph(instances, edges)
     statement: Statement = generate_statement(statement_graph)
-
-    REVISION_ITER = 3
-
-    factor_statement = generate_initial_factor_statement(statement)
-
-    for _ in range(REVISION_ITER):
-        revision = generate_proof_check(factor_statement)
-
-        if revision.is_pass:
-            break
-
-        factor_statement = generate_fiexd_fator_statement(factor_statement, revision)
-
-    factor_code = generate_factor_code(factor_statement)
-
-    end = time.time()
-    print(f"Time taken: {end - start} seconds")
-    return factor_code
+    return statement
 
 
 if __name__ == "__main__":
     statement = asyncio.run(main())
-    print(f"[Done] {len(statement.nodes)} nodes")

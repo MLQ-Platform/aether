@@ -1,5 +1,4 @@
 from typing import Any
-from dotenv.main import resolve_variables
 from openai import OpenAI
 
 
