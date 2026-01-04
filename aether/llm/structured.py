@@ -113,12 +113,13 @@ class StructuredLLM:
 
             except (json.JSONDecodeError, ValidationError) as e:
                 if attempt < self.max_retries - 1:
-                    full_messages.append({"role": "assistant", "content": content})
-                    full_messages.append(
-                        {
-                            "role": "user",
-                            "content": f"Invalid response. Error: {str(e)}\nPlease respond with valid JSON matching the schema.",
-                        }
+                    # Reset to initial messages instead of accumulating failed attempts
+                    full_messages = self._prepare_messages(messages, json_instruction)
+
+                    # Add error hint to the last user message
+                    full_messages[-1]["content"] += (
+                        f"\n\n[Previous attempt {attempt + 1} failed with error: {str(e)}. "
+                        f"Please ensure you output ONLY valid JSON matching the schema above.]"
                     )
                 else:
                     raise ValueError(
@@ -176,12 +177,12 @@ class StructuredLLM:
 
             except (json.JSONDecodeError, ValidationError) as e:
                 if attempt < self.max_retries - 1:
-                    full_messages.append({"role": "assistant", "content": content})
-                    full_messages.append(
-                        {
-                            "role": "user",
-                            "content": f"Invalid response. Error: {str(e)}\nPlease respond with valid JSON matching the schema.",
-                        }
+                    # Reset to initial messages instead of accumulating failed attempts
+                    full_messages = self._prepare_messages(messages, json_instruction)
+                    # Add error hint to the last user message
+                    full_messages[-1]["content"] += (
+                        f"\n\n[Previous attempt {attempt + 1} failed with error: {str(e)}. "
+                        f"Please ensure you output ONLY valid JSON matching the schema above.]"
                     )
                 else:
                     raise ValueError(

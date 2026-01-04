@@ -4,6 +4,9 @@ from aether.agents.thesis.schema import Thesis
 from aether.clause.tree.base import ClauseTree
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ThesisRevealingAgent(Agent):
@@ -45,8 +48,10 @@ class ThesisRevealingAgent(Agent):
                 ]
             )
 
+            logger.info(f"[Success] Thesis Generation (Len: {len(result.thesis)})")
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Thesis Generation Error: {e}")
             return None
 
         return result

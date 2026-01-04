@@ -11,6 +11,9 @@ from aether.llm.agent import ReactAgent
 from aether.llm.agent import Tool
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class RationaleAgent(Agent):
@@ -60,8 +63,12 @@ class RationaleAgent(Agent):
 
             result = await self.to_schema_async(result)
 
+            logger.info(
+                f"[Success] Rationale Generation (Len: {len(result.rationale)})"
+            )
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Rationale Generation Error: {e}")
             return None
 
         return result
@@ -75,7 +82,10 @@ class RationaleAgent(Agent):
             messages=[
                 {
                     "role": "user",
-                    "content": rationale,
+                    "content": (
+                        f"Given this rationale analysis result:\n\n{rationale}\n\n"
+                        f"Convert it to a structured format"
+                    ),
                 }
             ]
         )
@@ -102,7 +112,10 @@ class RationaleAgent(Agent):
             messages=[
                 {
                     "role": "user",
-                    "content": rationale,
+                    "content": (
+                        f"Given this rationale analysis result:\n\n{rationale}\n\n"
+                        f"Convert it to a structured format"
+                    ),
                 }
             ]
         )

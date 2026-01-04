@@ -1,6 +1,13 @@
+import json
+from pathlib import Path
 from typing import Dict
 from typing import List
+from aether.agents.claim.schema import Claim
+from aether.agents.rationale.schema import Rationale
 from aether.agents.statement.graph.node import Node
+from aether.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class StatementGraph:
@@ -43,3 +50,62 @@ class StatementGraph:
             else:
                 print("  Connected to: None")
             print("-" * 40)
+
+    def to_dict(self, accepted_only: bool = True) -> dict:
+        """
+        Convert the graph to a dictionary with accepted_only flag
+        """
+
+        graph_dict = {}
+
+        for node in self.nodes.values():
+            # 모든 노드 추가
+            if not accepted_only:
+                graph_dict[node.node_id] = node.instance.model_dump()
+                continue
+
+            # Claim이랑 같이 추가
+            if isinstance(node.instance, Rationale):
+                continue
+
+            # Accepted Claim 여부에 따라 추가
+            if isinstance(node.instance, Claim):
+                is_accepted = False
+
+                if node.edges:
+                    rationale_id = node.edges[0]
+                    rationale = self.nodes[rationale_id].instance
+                    is_accepted = rationale.is_accepted
+
+                if is_accepted:
+                    graph_dict[node.node_id] = node.instance.model_dump()
+                    graph_dict[rationale_id] = rationale.model_dump()
+
+                continue
+
+            # 나머지 Thesis, Statement 추가
+            graph_dict[node.node_id] = node.instance.model_dump()
+
+        return graph_dict
+
+    def save(self, filepath: str, accepted_only: bool = True):
+        """
+        Save the graph to a JSON file
+        """
+        filepath = Path(filepath)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
+
+        logger.info(f"[Success] Statement Graph saved to {filepath}")
+
+    def load(cls, filepath: str) -> dict:
+        """
+        Load the JSON file
+        """
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        logger.info(f"[Success] Statement Graph loaded from {filepath}")
+        return data

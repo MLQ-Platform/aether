@@ -37,35 +37,15 @@ def generate_thesis(tree_a: ClauseTree, tree_b: ClauseTree) -> Thesis:
     return thesis
 
 
-def generate_claims(thesis: Thesis) -> ClaimList:
+def generate_claims(thesis: Thesis) -> List[Claim]:
     claim_agent = factory.get_claim_agent()
     claims = claim_agent.run(thesis.thesis)
     claims = add_uuid(claims.claims)
     return claims
 
 
-def get_final_claims(statement_graph: StatementGraph) -> List[Claim]:
-    final_claims = []
-
-    for node in statement_graph.nodes.values():
-        if type(node.instance) is Claim:
-            if node.edges:
-                rationale_id = node.edges[0]
-                rationale = statement_graph.nodes[rationale_id].instance
-
-                if rationale.is_accepted:
-                    final_claims.append(node.instance)
-
-            else:
-                final_claims.append(node.instance)
-
-    return final_claims
-
-
-def generate_statement(statement_graph: StatementGraph) -> Statement:
+def generate_statement(final_claims: List[Claim]) -> Statement:
     statement_agent = factory.get_statement_agent()
-
-    final_claims = get_final_claims(statement_graph)
     statement = statement_agent.run(final_claims)
     statement.uuid = generate_uuid()
     return statement
@@ -92,7 +72,7 @@ def generate_statement_graph(
 
 
 async def generate_rationales_async(
-    claims: ClaimList, provider: InMemoryDataProvider
+    claims: List[Claim], provider: InMemoryDataProvider
 ) -> List[Rationale]:
     """
     Get Rationales Async
@@ -111,7 +91,7 @@ async def generate_rationales_async(
 
 
 async def generate_rationales_modify_async(
-    claims: ClaimList, rationales: List[Rationale]
+    claims: List[Claim], rationales: List[Rationale]
 ) -> List[Claim]:
     """
     Get Rationales Modify Async
@@ -143,6 +123,7 @@ async def main(TOTAL_ITERATIONS: int = 4, graph_filepath: str = "clause-graph-v1
 
     edges = []
     instances = []
+    final_claims = []
 
     instances.append(thesis)
     instances.extend(claims)
@@ -153,12 +134,16 @@ async def main(TOTAL_ITERATIONS: int = 4, graph_filepath: str = "clause-graph-v1
 
         rationales = await generate_rationales_async(claims, provider=provider)
 
-        rejected_rationales = [
+        rejected_rationales: List[Rationale] = [
             x[1] for x in zip(claims, rationales) if not x[1].is_accepted
         ]
-        rejected_claims = [
+        rejected_claims: List[Claim] = [
             x[0] for x in zip(claims, rationales) if not x[1].is_accepted
         ]
+        accepted_claims: List[Claim] = [
+            x[0] for x in zip(claims, rationales) if x[1].is_accepted
+        ]
+        final_claims.extend(accepted_claims)
 
         print(
             f"Rejected Rationales & Claims: {len(rejected_rationales)} & {len(rejected_claims)}"
@@ -183,9 +168,10 @@ async def main(TOTAL_ITERATIONS: int = 4, graph_filepath: str = "clause-graph-v1
 
         claims = modified_claims
 
+    statement: Statement = generate_statement(final_claims)
+    instances.append(statement)
     statement_graph: StatementGraph = generate_statement_graph(instances, edges)
-    statement: Statement = generate_statement(statement_graph)
-    return statement
+    return statement_graph
 
 
 if __name__ == "__main__":

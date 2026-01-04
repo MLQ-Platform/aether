@@ -8,7 +8,7 @@ class Statement(BaseModel):
     Statement composed from verified claims
     """
 
-    uuid: Optional[str] = None
+    uuid: Optional[int] = None
 
     statement: str = Field(
         description="Synthesized statement that logically combines all verified claims without information loss"

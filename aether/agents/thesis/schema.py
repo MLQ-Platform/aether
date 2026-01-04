@@ -8,6 +8,6 @@ class Thesis(BaseModel):
     Thesis
     """
 
-    uuid: Optional[str] = None
+    uuid: Optional[int] = None
 
     thesis: str = Field(description="Thesis statement")

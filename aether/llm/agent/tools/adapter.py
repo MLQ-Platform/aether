@@ -4,9 +4,13 @@ from abc import abstractmethod
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from openai import AsyncOpenAI
 from openai import OpenAI
 from aether.llm.agent.tools.base import Tool
+from aether.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ToolCallAdapter(ABC):
@@ -19,36 +23,48 @@ class ToolCallAdapter(ABC):
 
     @abstractmethod
     def convert_tools_to_api_format(self, tools: List[Tool]) -> List[Dict]:
-        """Tool 리스트를 해당 모델의 API 형식으로 변환"""
+        """
+        Tool 리스트를 해당 모델의 API 형식으로 변환
+        """
         pass
 
     @abstractmethod
     def call_with_tools(
         self, messages: List[Dict], tools: List[Dict], model: str, **kwargs
     ) -> Any:
-        """Tool을 사용한 API 호출"""
+        """
+        Tool을 사용한 API 호출
+        """
         pass
 
     @abstractmethod
     def extract_tool_calls(self, response: Any) -> List[Dict]:
-        """응답에서 Tool Call 추출"""
+        """
+        응답에서 Tool Call 추출
+        """
         pass
 
     @abstractmethod
     def has_tool_calls(self, response: Any) -> bool:
-        """응답에 Tool Call이 있는지 확인"""
+        """
+        응답에 Tool Call이 있는지 확인
+        """
         pass
 
     @abstractmethod
     def format_tool_result(
         self, tool_call: Dict, result: str, messages: List[Dict], reasoning: str = None
     ) -> None:
-        """Tool 실행 결과를 메시지에 추가 (in-place)"""
+        """
+        Tool 실행 결과를 메시지에 추가 (in-place)
+        """
         pass
 
     @abstractmethod
     def get_final_content(self, response: Any) -> str:
-        """최종 응답 텍스트 추출"""
+        """
+        최종 응답 텍스트 추출
+        """
         pass
 
 
@@ -79,14 +95,24 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
             for tool in tools
         ]
 
-    def call_with_tools(self, messages: List[Dict], tools: List[Dict], **kwargs) -> Any:
+    def call_with_tools(
+        self,
+        messages: List[Dict],
+        tools: List[Dict],
+        tool_choice: Optional[str] = "auto",
+        **kwargs,
+    ) -> Any:
         """
         OpenAI API 호출
         """
         # parallel_tool_calls를 명시적으로 설정하지 않으면 기본값 사용
         # False로 설정하면 한 번에 하나씩만 호출 (reasoning이 더 자세해질 수 있음)
         return self.client.chat.completions.create(
-            model=self.model, messages=messages, tools=tools, **kwargs
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            **kwargs,
         )
 
     def extract_tool_calls(self, response: Any) -> List[Dict]:
@@ -112,7 +138,7 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
                 )
 
             except json.JSONDecodeError as e:
-                print(f"[Error] Failed to parse tool arguments: {e}")
+                logger.error(f"[Fail] Failed to JSON decode tool arguments: {e}")
 
         return tool_calls
 
@@ -177,11 +203,19 @@ class AsyncOpenAIToolCallAdapter(OpenAIToolCallAdapter):
         self.client = client
 
     async def call_with_tools(
-        self, messages: List[Dict], tools: List[Dict], **kwargs
+        self,
+        messages: List[Dict],
+        tools: List[Dict],
+        tool_choice: Optional[str] = "auto",
+        **kwargs,
     ) -> Any:
         """
         Async OpenAI API 호출
         """
         return await self.client.chat.completions.create(
-            model=self.model, messages=messages, tools=tools, **kwargs
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            **kwargs,
         )

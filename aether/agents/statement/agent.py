@@ -5,6 +5,9 @@ from aether.agents.claim.schema import Claim
 from aether.agents.statement.schema import Statement
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class StatementAgent(Agent):
@@ -46,8 +49,12 @@ class StatementAgent(Agent):
                 ]
             )
 
+            logger.info(
+                f"[Success] Statement Generation (Len: {len(result.statement)})"
+            )
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Statement Generation Error: {e}")
             return None
 
         return result

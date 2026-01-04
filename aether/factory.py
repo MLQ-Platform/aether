@@ -89,7 +89,7 @@ def get_rationale_agent(model_name="deepseek/deepseek-v3.2-exp"):
         client=client,
         tools=tools,
         system_promt_path="statement-rationale.txt",
-        verbose=True,
+        max_iterations=10,
     )
     return rationale_agent
 

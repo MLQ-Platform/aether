@@ -42,6 +42,11 @@ class SubgraphExtractor:
 
         visited = self._traverse(size, start_node)
         subgraph = self._build(visited)
+
+        nodes = subgraph.num_nodes
+        edges = subgraph.num_edges
+
+        logger.info(f"[Success] Subgraph extracted (size: {nodes}, edges: {edges})")
         return subgraph
 
     def _traverse(self, size: int, start: int) -> Set[int]:
@@ -82,7 +87,6 @@ class SubgraphExtractor:
 
             visited.add(current)
 
-        logger.info(f"Random walk completed. Final size: {len(visited)}")
         return visited
 
     def _build(self, node_ids: Set[int]) -> ClauseGraph:
@@ -103,7 +107,4 @@ class SubgraphExtractor:
                     subgraph.clause_trees[node_id1] = self.graph.clause_trees[node_id1]
                     subgraph.clause_trees[node_id2] = self.graph.clause_trees[node_id2]
 
-        logger.info(
-            f"Built subgraph with {subgraph.num_nodes} nodes and {subgraph.num_edges} edges"
-        )
         return subgraph

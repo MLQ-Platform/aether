@@ -4,6 +4,10 @@ from typing import List
 from typing import Optional
 from aether.llm.agent.tools.adapter import ToolCallAdapter
 from aether.llm.agent.tools.base import Tool
+from aether.logger import get_logger
+from aether.utils import generate_task_id
+
+logger = get_logger(__name__)
 
 
 class ReactAgent:
@@ -19,101 +23,102 @@ class ReactAgent:
         adapter: ToolCallAdapter,
         tools: List[Tool],
         max_iterations: int = 10,
-        verbose: bool = False,
     ):
         self.adapter = adapter
         self.tools = {tool.name: tool for tool in tools}
         self.max_iterations = max_iterations
-        self.verbose = verbose
 
         # Tool을 API 형식으로 변환
         self.api_tools = adapter.convert_tools_to_api_format(tools)
 
-    def run(self, query: str, system_prompt: Optional[str] = None, **kwargs) -> str:
+    def run(
+        self,
+        query: str,
+        system_prompt: Optional[str] = None,
+        task_id: Optional[str] = None,
+        **kwargs,
+    ) -> str:
         """
         Agent 실행
-
-        Args:
-            query: 사용자 질문/요청
-            system_prompt: 시스템 프롬프트 (선택)
-            **kwargs: API 추가 파라미터
-
-        Returns:
-            최종 응답
         """
+        task_id = task_id or generate_task_id()
+
         # 메시지 초기화
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": query})
 
-        if self.verbose:
-            print(f"[Agent] Available tools: {list(self.tools.keys())}")
-
         # ReAct Loop
         for iteration in range(self.max_iterations):
-            if self.verbose:
-                print(f"\n[Agent] Iteration {iteration + 1}/{self.max_iterations}")
-
-            # 1. LLM 호출
-            print("[Agent] Start LLM API Calling")
-            response = self.adapter.call_with_tools(
-                messages=messages, tools=self.api_tools, **kwargs
+            logger.info(
+                f"[Task ID: {task_id}] [Start] Iteration {iteration + 1}/{self.max_iterations}"
             )
 
-            # 2. Tool Call 확인
+            # 1. LLM Tool Calling 호출
+            response = self.adapter.call_with_tools(
+                messages=messages,
+                tools=self.api_tools,
+                tool_choice="required",
+                **kwargs,
+            )
+
+            # 2. Tool Call 확인 (비정상 케이스)
             if not self.adapter.has_tool_calls(response):
-                # Tool Call이 없으면 최종 응답 반환
-                final_content = self.adapter.get_final_content(response)
-                return final_content
+                logger.warning(f"[Task ID: {task_id}] No tool call")
+                continue
 
             # 3. Tool Call 추출 및 실행
             tool_calls = self.adapter.extract_tool_calls(response)
             # Tool call 시 LLM의 추론 과정(content) 확인 및 출력
             reasoning = self.adapter.get_final_content(response)
+            logger.info(
+                f"[Task ID: {task_id}] [Tool Call] Reasoning: {reasoning}",
+            )
+            logger.info(
+                f"[Task ID: {task_id}] [Tool Call] execution {len(tool_calls)} tools started"
+            )
 
             for tool_call in tool_calls:
                 tool_name = tool_call["name"]
                 tool_args = tool_call["arguments"]
 
-                if self.verbose:
-                    print(f"[Agent] Start Calling: {tool_name}")
+                try:
+                    tool = self.tools[tool_name]
+                    result = str(tool.func(**tool_args))
+                    logger.info(
+                        f"[Task ID: {task_id}] [Success] Tool {tool_name} execution completed"
+                    )
 
-                # Tool 실행
-                if tool_name not in self.tools:
-                    result = f"Error: Tool '{tool_name}' not found"
-                else:
-                    try:
-                        tool = self.tools[tool_name]
-                        result = str(tool.func(**tool_args))
-                    except Exception as e:
-                        result = f"Error executing {tool_name}: {str(e)}"
-
-                if self.verbose:
-                    print(f"[Agent] Result: {result[:100]}...")
+                except Exception as e:
+                    result = f"Error executing tool {tool_name}: {str(e)}"
+                    logger.error(
+                        f"[Task ID: {task_id}] [Fail] Tool {tool_name} execution fail: {str(e)}"
+                    )
 
                 # 결과를 메시지에 추가 (reasoning 포함)
                 self.adapter.format_tool_result(tool_call, result, messages, reasoning)
-
-        # 최대 반복 횟수 도달 - 최종 답변 강제 요청
-        if self.verbose:
-            print("\n[Agent] Max iterations reached. Requesting final answer...")
 
         # 최종 답변 요청 메시지 추가
         messages.append(
             {
                 "role": "user",
-                "content": "You have reached the maximum number of tool calls. Please provide your final answer based on the information gathered so far.",
+                "content": "Provide your final answer based on the information gathered so far.",
             }
         )
 
-        # Tool 없이 최종 답변 요청
+        # 최종 답변 요청
         final_response = self.adapter.call_with_tools(
-            messages=messages, tools=[], **kwargs
+            messages=messages,
+            tools=[],
+            tool_choice="none",
+            **kwargs,
         )
         final_content = self.adapter.get_final_content(final_response)
 
-        print("[Agent] Final Done")
+        logger.info(
+            f"[Task ID: {task_id}] [Done] final answer generation (By Max Iteration Reached)"
+        )
         return final_content
 
     async def run_async(
@@ -121,27 +126,21 @@ class ReactAgent:
         query: str,
         system_prompt: Optional[str] = None,
         exec_context: Optional[dict] = {},
+        task_id: Optional[str] = None,
         **kwargs,
     ) -> str:
         """
         Async Agent 실행
-
-        Args:
-            query: 사용자 질문/요청
-            system_prompt: 시스템 프롬프트 (선택)
-            **kwargs: API 추가 파라미터
-
-        Returns:
-            최종 응답
         """
+        TOOL_TIMEOUT = 30
+
+        task_id = task_id or generate_task_id()
+
         # 메시지 초기화
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": query})
-
-        if self.verbose:
-            print(f"[Agent] Available tools: {list(self.tools.keys())}")
 
         # Use shared ThreadPoolExecutor (lazy initialization)
         if ReactAgent._shared_executor is None:
@@ -150,93 +149,93 @@ class ReactAgent:
         executor = ReactAgent._shared_executor
         loop = asyncio.get_event_loop()
 
-        # Timeout for tool execution (30 seconds)
-        TOOL_TIMEOUT = 30
-
         # ReAct Loop
         for iteration in range(self.max_iterations):
-            if self.verbose:
-                print(f"\n[Agent] Iteration {iteration + 1}/{self.max_iterations}")
-
-            print("[Agent] Start LLM API Calling")
-            # 1. LLM 호출 (async)
-            response = await self.adapter.call_with_tools(
-                messages=messages, tools=self.api_tools, **kwargs
+            logger.info(
+                f"[Task ID: {task_id}] [Start] Iteration {iteration + 1}/{self.max_iterations}"
             )
 
-            # 2. Tool Call 확인
+            # 1. LLM Tool Calling 호출 (async)
+            response = await self.adapter.call_with_tools(
+                messages=messages,
+                tools=self.api_tools,
+                tool_choice="required",
+                **kwargs,
+            )
+
+            # 2. Tool Call 확인 (비정상 케이스)
             if not self.adapter.has_tool_calls(response):
-                # Tool Call이 없으면 최종 응답 반환
-                final_content = self.adapter.get_final_content(response)
-                # Don't shutdown shared executor
-                return final_content
+                logger.warning(f"[Task ID: {task_id}] No tool call")
+                continue
 
             # 3. Tool Call 추출 및 실행
             tool_calls = self.adapter.extract_tool_calls(response)
             # Tool call 시 LLM의 추론 과정(content) 확인 및 출력
             reasoning = self.adapter.get_final_content(response)
 
+            logger.info(
+                f"[Task ID: {task_id}] [Tool Call] Reasoning: {reasoning}",
+            )
+            logger.info(
+                f"[Task ID: {task_id}] [Tool Call] execution {len(tool_calls)} tools started"
+            )
+
             for tool_call in tool_calls:
                 tool_name = tool_call["name"]
                 tool_args = tool_call["arguments"]
 
-                if self.verbose:
-                    print(f"[Agent] Start Calling: {tool_name}")
+                try:
+                    tool = self.tools[tool_name]
 
-                # Tool 실행
-                if tool_name not in self.tools:
-                    result = f"Error: Tool '{tool_name}' not found"
-                else:
-                    try:
-                        tool = self.tools[tool_name]
+                    def run_tool():
+                        # All tools accept exec_context and return (result, exec_context) tuple
+                        tool_result = tool.func(**tool_args, exec_context=exec_context)
+                        return tool_result
 
-                        def run_tool():
-                            # All tools accept exec_context and return (result, exec_context) tuple
-                            tool_result = tool.func(
-                                **tool_args, exec_context=exec_context
-                            )
-                            return tool_result
+                    # 별도 쓰레드에서 실행
+                    tool_result = await asyncio.wait_for(
+                        loop.run_in_executor(executor, run_tool),
+                        timeout=TOOL_TIMEOUT,
+                    )
 
-                        # 별도 쓰레드에서 실행
-                        tool_result = await asyncio.wait_for(
-                            loop.run_in_executor(executor, run_tool),
-                            timeout=TOOL_TIMEOUT,
-                        )
+                    result, exec_context = tool_result
+                    result = str(result)
+                    logger.info(
+                        f"[Task ID: {task_id}] [Success] Tool {tool_name} execution completed"
+                    )
 
-                        result, exec_context = tool_result
-                        result = str(result)
-
-                    except asyncio.TimeoutError:
-                        result = f"Error: Tool '{tool_name}' execution exceeded {TOOL_TIMEOUT} seconds timeout."
-                        # Keep exec_context unchanged on timeout
-
-                    except Exception as e:
-                        result = f"Error executing {tool_name}: {str(e)}"
-                        # Keep exec_context unchanged on error
-
-                if self.verbose:
-                    print(f"[Agent] Result: {result[:100]}...")
+                except asyncio.TimeoutError:
+                    result = f"Error: Tool '{tool_name}' execution exceeded {TOOL_TIMEOUT} seconds timeout."
+                    logger.error(
+                        f"[Task ID: {task_id}] [Fail] Tool {tool_name} execution fail: Timeout after {TOOL_TIMEOUT}s"
+                    )
+                except Exception as e:
+                    result = f"Error executing tool {tool_name}: {str(e)}"
+                    logger.error(
+                        f"[Task ID: {task_id}] [Fail] Tool {tool_name} execution fail: {str(e)}"
+                    )
 
                 # 결과를 메시지에 추가 (reasoning 포함)
                 self.adapter.format_tool_result(tool_call, result, messages, reasoning)
-
-        # 최대 반복 횟수 도달 - 최종 답변 강제 요청
-        if self.verbose:
-            print("\n[Agent] Max iterations reached. Requesting final answer...")
 
         # 최종 답변 요청 메시지 추가
         messages.append(
             {
                 "role": "user",
-                "content": "You have reached the maximum number of tool calls. Please provide your final answer based on the information gathered so far.",
+                "content": "Provide your final answer based on the information gathered so far.",
             }
         )
 
-        # Tool 없이 최종 답변 요청 (async)
+        # 최종 답변 요청 (async)
         final_response = await self.adapter.call_with_tools(
-            messages=messages, tools=[], **kwargs
+            messages=messages,
+            tools=[],
+            tool_choice="none",
+            **kwargs,
         )
         final_content = self.adapter.get_final_content(final_response)
 
-        print("[Agent] Final Done")
+        logger.info(
+            f"[Task ID: {task_id}] [Done] final answer generation (By Max Iteration Reached) Iter: {iteration + 1}"
+        )
         return final_content

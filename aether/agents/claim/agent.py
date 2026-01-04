@@ -5,6 +5,9 @@ from aether.agents.claim.schema import ClaimList
 from aether.config import DataSchema
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ClaimDecompositionAgent(Agent):
@@ -50,8 +53,10 @@ class ClaimDecompositionAgent(Agent):
                 ]
             )
 
+            logger.info(f"[Success] Claim List Generation (Num: {len(result.claims)})")
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Claim List Generation Error: {e}")
             return None
 
         return result
@@ -100,8 +105,10 @@ class ClaimModifyAgent(Agent):
                 ]
             )
 
+            logger.info("[Success] Claim Modify Generation")
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Claim Modify Generation Error: {e}")
             return None
 
         return result

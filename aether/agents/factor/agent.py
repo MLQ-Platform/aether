@@ -6,6 +6,9 @@ from aether.agents.factor.schema import ProofRevision
 from aether.config import DataSchema
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class InitialFactorStatementAgent(Agent):
@@ -45,8 +48,12 @@ class InitialFactorStatementAgent(Agent):
                 ]
             )
 
+            logger.info(
+                f"[Success] Initial Factor Generation (Len: {len(result.statement)})"
+            )
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Initial Factor Generation Error: {e}")
             return None
 
         return result
@@ -95,8 +102,10 @@ class ProofCheckAgent(Agent):
                 ]
             )
 
+            logger.info("[Success] Factor Proof Check Generation")
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Factor Proof Check Generation Error: {e}")
             return None
 
         return result
@@ -145,8 +154,10 @@ class ProofFixAgent(Agent):
                 ]
             )
 
+            logger.info("[Success] Factor Proof Fix Generation")
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Factor Proof Fix Generation Error: {e}")
             return None
 
         return result
@@ -204,8 +215,10 @@ class FactorCodeAgent(Agent):
                 ]
             )
 
+            logger.info("[Success] Factor Code Generation")
+
         except Exception as e:
-            print(f"LLM Invoke Error: {e}")
+            logger.error(f"[Fail] Factor Code Generation Error: {e}")
             return None
 
         return result

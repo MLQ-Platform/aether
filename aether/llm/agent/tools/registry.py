@@ -12,7 +12,6 @@ class ToolRegistry:
     """
 
     def __init__(self):
-        # {agent_name: {tool_name: Tool}}
         self._tools: Dict[str, Dict[str, Tool]] = {}
 
     def get_agent_names(self) -> List[str]:
