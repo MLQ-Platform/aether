@@ -94,19 +94,6 @@ def get_rationale_agent(model_name="deepseek/deepseek-v3.2-exp"):
     return rationale_agent
 
 
-def get_claim_decomposition_agent(model_name="deepseek/deepseek-v3.2-exp"):
-    from aether.agents import ClaimDecompositionAgent
-
-    client = get_client()
-
-    claim_decomposition_agent = ClaimDecompositionAgent(
-        model=model_name,
-        client=client,
-        system_promt_path="statement-claim.txt",
-    )
-    return claim_decomposition_agent
-
-
 def get_claim_modify_agent(model_name="deepseek/deepseek-v3.2-exp"):
     from aether.agents import ClaimModifyAgent
 
