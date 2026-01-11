@@ -45,8 +45,11 @@ For each issue found, provide specific revision location and direction as separa
 - Revision 2: ...
 
 # Input Format
-
 <proof>
 ...
 </proof>
 
+# Important Instructions
+- If proof errors can be resolved by redefining the factor formula, suggest how to redefine it
+- Always provide valid reasoning when suggesting any revision guidance
+- Always consider directions for factor redefinition that can resolve proof errors 

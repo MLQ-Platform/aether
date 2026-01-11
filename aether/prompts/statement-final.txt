@@ -27,17 +27,17 @@ Each claim is a natural language description of a verified proposition that has 
 2. **Logical Coherence**: The statement must form a single, coherent narrative
    - Claims should be connected logically (causal, temporal, or correlational relationships)
    - The statement should explain HOW claims relate to each other
-   - Maintain logical flow from context → observations → relationships → implications
+   - Maintain logical flow from context, observations, relationships, implications
 
 3. **Information Preservation**: Zero information loss
    - Preserve all specific details: market regimes, statistical measures, temporal relationships
    - Maintain all directional relationships (positive/negative, increase/decrease, precede/follow)
    - Keep all quantitative aspects (streaks, correlations, dependencies)
    - Preserve all conditions and contexts
+   - Preserve all specific parameters and definitions
 
 4. **Synthesis, Not Repetition**: Combine claims into a unified statement
    - Do NOT simply concatenate claims with "and"
-   - Identify common themes, contexts, and relationships
    - Create a narrative that shows how claims support a unified market phenomenon
    - Use logical connectors to show relationships between claims
 
@@ -48,15 +48,21 @@ Each claim is a natural language description of a verified proposition that has 
    - Mechanisms: Causal or predictive relationships (if present in claims)
    - Implications: What this reveals about market dynamics
 
+6. **Reproducibility**: Verification must be reproducible based solely on the statement content
+   - All specific elements mentioned in claims must be explicitly stated (e.g., parameters, operator definitions, etc.)
+   - Accurate data-driven verification process must be reproducible based solely on the statement content
+   - All elements necessary to reproduce verification based solely on the statement content must be explicitly stated
+
 # Requirements
 
 IMPORTANT: Your statement must:
-- Be a single coherent paragraph (typically 4-8 sentences)
+- Be a single coherent paragraph 
 - Include ALL content from ALL claims without exception
 - Show logical relationships between claims (not just list them)
 - Maintain scientific rigor and precision
 - Use precise statistical terminology from the claims
 - Preserve all market contexts, conditions, and regimes mentioned
+- Explicitly articulate any causal or correlational dependencies between claims.
 
 IMPORTANT: Information Loss Checklist:
 - Every market regime/context mentioned in claims is included
@@ -65,30 +71,3 @@ IMPORTANT: Information Loss Checklist:
 - Every temporal relationship (lag, precede, coincide) is included
 - Every condition or threshold is maintained
 - Every data column relationship is preserved
-
-# Output Format
-
-Output format:
-<statement>
-Your synthesized statement that logically combines all claims.
-</statement>
-
-# Example
-
-<example>
-<input>
-<claims>
-- In trending markets with persistent directional moves, opening prices exhibit sustained positive skewness streaks indicating consistent gap-up behavior
-- In trending markets with persistent directional moves, smoothed low price skewness exhibits sustained negative skewness streaks indicating persistent selling pressure at daily lows
-- In trending markets, upward streaks in opening price skewness statistically coincide with downward streaks in smoothed low price skewness
-- The dependency between opening price skewness streaks and smoothed low price skewness streaks is stronger in momentum regimes than in non-trending periods
-- Strong directional relationship exists between opening price distribution tendencies and subsequent low price distribution tendencies with substantial predictive power
-</claims>
-</input>
-
-<output>
-<statement>
-In trending markets with persistent directional moves, opening prices exhibit sustained positive skewness streaks indicating consistent gap-up behavior, while smoothed low price skewness exhibits sustained negative skewness streaks indicating persistent selling pressure at daily lows. These upward streaks in opening price skewness statistically coincide with downward streaks in smoothed low price skewness, revealing a strong directional relationship between opening price distribution tendencies and subsequent low price distribution tendencies with substantial predictive power. The dependency between opening price skewness streaks and smoothed low price skewness streaks is systematically stronger during momentum regimes compared to non-trending periods, demonstrating that this pattern is a characteristic feature of markets experiencing strong directional momentum where opening optimism contrasts with persistent intraday weakness.
-</statement>
-</output>
-</example>

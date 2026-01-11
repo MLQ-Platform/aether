@@ -8,9 +8,8 @@ Given a market thesis, decompose it into independent claims where each claim rep
 A Claim is the smallest logical unit that satisfies ALL of the following properties:
 
 ## 1. Context Awareness
-If a claim requires a specific market regime or state condition to hold true, it must inherit that context.
-- Market regime: "In trending markets", "During range-bound periods", "In momentum regimes"
-- State condition: "During high volatility", "When directional moves persist"
+If a claim requires a specific market regime or state condition to hold true, it must inherit that thesis context.
+- Clearly check any specified market regime, state condition, or other relevant constraints.
 - If no context in thesis, claims can be context-independent
 
 ## 2. Atomicity
@@ -25,42 +24,38 @@ The claim must be empirically testable using specific data columns and statistic
 - References concrete data columns (OPEN, HIGH, LOW, CLOSE, VOLUME, etc.)
 - Avoids vague qualitative terms unless they map to measurable quantities
 
-## 4. Independence
+## 4. Mutual Exclusivity
 Each claim tests a DIFFERENT aspect of the thesis without redundancy.
 - No claim should be merely a restatement of another
 - No claim should be an interpretation or consequence of another
 - Each claim adds unique information to support the thesis
+- When connected together, all claims must comprehensively support the original thesis without gaps
 
 ## 5. Specificity
 The claim uses precise mathematical/statistical terminology.
 - Uses specific metrics (correlation, skewness, kurtosis, streak, percentile, ratio)
 - Specifies direction (positive, negative, increase, decrease)
 - Indicates temporal relationships (precede, coincide, follow, lag)
+- Specifies parameter (time window)
 - Includes operational definitions where needed
-
-## 6. Completeness
-The set of all claims, when proven true together, fully supports the thesis.
-- Claims should cover: (a) individual patterns, (b) relationships, (c) market context
-- Logical structure: C1 and C2 and ... and Cn → Thesis
-- Typically 3-6 claims are sufficient
 
 # Output Requirements
 For each claim, you must provide:
 
-1. **claim** (str): Natural language description of the claim
+1. claim (str): Natural language description of the claim
    - Clear, concise, testable proposition
    - Uses precise statistical terminology
    - 1-2 sentences maximum
 
-2. **condition** (str): Mathematical/statistical expression
+2. condition (str): Mathematical/statistical expression of the claim
    - Uses data column names, operators, or thresholds
    - Format: "function(COLUMN, params) operator threshold"
    - Examples: "streak_length(skew(OPEN, 20) > 0) >= 3"
 
-3. **data_columns** (list[str]): List of required columns
+3. data_columns (list[str]): List of required columns
    - Only columns actually used in verification
 
-4. **verification_plan** (str): Data-driven verification strategy
+4. verification_plan (str): Data-driven verification strategy
    - Describes how to empirically test this claim
    - Specifies statistical tests to use (e.g., t-test, permutation test, correlation)
    - Indicates baseline comparisons (null hypothesis, random distribution, theoretical expectation)
@@ -69,8 +64,8 @@ For each claim, you must provide:
 
 # Important Guidelines
 - IMPORTANT: Carefully judge whether each claim requires a specific market regime/state to hold true.
-- IMPORTANT: If claims require market regime/state to hold true, extract from thesis and apply to those claims.
-- IMPORTANT: Generate 3-6 claims only. Prefer fewer, high-quality atomic claims over many redundant ones.
+- IMPORTANT: Generate only those claims that are strictly necessary to satisfy mutual exclusivity.
+- IMPORTANT: Prefer fewer, high-quality atomic claims over many redundant ones.
 - IMPORTANT: Ensure claims are independent. Do NOT create claims that are interpretations or restatements of others.
 - IMPORTANT: Each claim must have a concrete condition expression that can be verified programmatically.
 - IMPORTANT: Avoid subjective language (optimism, fear, sentiment) unless grounded in measurable proxies.
@@ -79,40 +74,3 @@ For each claim, you must provide:
 # Available Data Columns
 <<DATA_DESCRIPTIONS>>
 
-# Example
-
-<example>
-<input>
-<thesis>
-In trending market, volume spikes characterized by high kurtosis precede significant price volatility increases. When trading volume exhibits fat-tailed distribution with kurtosis exceeding normal levels, this abnormal volume pattern statistically leads subsequent periods of elevated price volatility within the next 5-10 periods.
-</thesis>
-</input>
-
-<output>
-<claims>
-  <claim>
-    <claim_id>C1</claim_id>
-    <claim>In trending market, trading volume exhibits fat-tailed distribution with high kurtosis</claim>
-    <condition>rolling(VOLUME, 20).kurt() > 3</condition>
-    <data_columns>['VOLUME']</data_columns>
-    <verification_plan>Calculate 20-period rolling kurtosis of trading volume. Perform one-sample t-test against normal distribution baseline (kurtosis=3) with alternative='greater'. Calculate effect size (Cohen's d) and perform permutation test (1000 shuffles) to compare observed kurtosis distribution against random baseline.</verification_plan>
-  </claim>
-  
-  <claim>
-    <claim_id>C2</claim_id>
-    <claim>In trending market, Price volatility increases significantly following volume spikes</claim>
-    <condition>rolling(RETURN, 10).std().shift(-10) > rolling(RETURN, 10).std() * 1.5</condition>
-    <data_columns>['CLOSE', 'RETURN']</data_columns>
-    <verification_plan>Calculate 10-period rolling volatility before and after volume spikes. Perform paired t-test comparing pre-spike and post-spike volatility. Use permutation test to compare observed volatility increase against random time-shifted baseline. Calculate effect size to assess practical significance.</verification_plan>
-  </claim>
-  
-  <claim>
-    <claim_id>C3</claim_id>
-    <claim>High volume kurtosis precedes elevated price volatility within 5-10 periods</claim>
-    <condition>corr(rolling(VOLUME, 20).kurt(), rolling(RETURN, 10).std().shift(-10)) > 0.4</condition>
-    <data_columns>['VOLUME', 'CLOSE', 'RETURN']</data_columns>
-    <verification_plan>Calculate correlation between volume kurtosis and forward-shifted volatility (5-10 periods ahead). Perform Pearson correlation test with null hypothesis r=0. Use permutation test to compare observed correlation against random time-shifted baseline. Test for lag effects at 5, 7, and 10 periods.</verification_plan>
-  </claim>
-</claims>
-</output>
-</example>

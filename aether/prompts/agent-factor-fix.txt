@@ -14,7 +14,6 @@ Modify the proof content to address all revision items. Preserve the original pr
 2. **Structure Preservation**
    - Maintain all section headings (Step 1, Step 2, Step 3, Step 4, Step 5)
    - Keep the same proof format and organization
-   - Preserve subsection structure (Step 2.1, 2.2, 2.3, 2.4)
 
 3. **Mathematical Rigor**
    - Add missing justifications where indicated

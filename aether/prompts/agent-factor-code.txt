@@ -98,11 +98,9 @@ def factor(data: pd.DataFrame, params: dict = {}) -> pd.Series:
 # Important Guidelines
 - IMPORTANT: Extract hyperparameters from proof definitions and make them configurable via params
 - IMPORTANT: If hyperparameters cannot be extracted from the proof, set appropriate default values for implementation
-- IMPORTANT: Use pandas rolling, ewm, and numpy functions for calculations
 - IMPORTANT: Apply rolling operations across the entire DataFrame to compute factor values for each window
 - IMPORTANT: Return a pd.Series with the same DatetimeIndex as input data
 - IMPORTANT: The returned pd.Series must be assigned to a variable named 'result' before returning
 - IMPORTANT: Ensure all column names match exactly with DATA_DESCRIPTIONS
 - IMPORTANT: Keep implementation compact and readable
-- IMPORTANT: Do not add any validation or error handling code
 
