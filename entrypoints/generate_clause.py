@@ -6,19 +6,22 @@ from aether.clause.graph.base import ClauseGraph
 from aether.clause.graph.edge import SUEdgeCalculator
 from aether.clause.tree.base import ClauseTree
 from aether.clause.tree.generator import ClauseGenerator
+from aether.logger import get_logger
 from aether.utils import generate_uuid
+
+logger = get_logger(__name__)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num-edges", type=int, default=100)
+    parser.add_argument("--num-edges", type=int, default=1000)
     parser.add_argument("--sim-thr", type=float, default=0.2)
     parser.add_argument("--weight-thr", type=float, default=0.3)
     parser.add_argument("--min-signal-ratio", type=float, default=0.10)
     parser.add_argument("--max-signal-ratio", type=float, default=0.40)
     parser.add_argument("--max-iterations", type=int, default=1000)
     parser.add_argument("--max-depth", type=int, default=3)
-    parser.add_argument("--num-trees", type=int, default=10)
+    parser.add_argument("--num-trees", type=int, default=5)
     return parser.parse_args()
 
 
@@ -100,12 +103,12 @@ def main():
 
         num_edges = clause_graph.num_edges
 
-        print(f"[Iter: {iter_}] Number of edges: {num_edges}")
+        logger.info(f"[Iter: {iter_}] Number of edges: {num_edges}")
 
         if num_edges > args.num_edges:
             break
 
-    clause_graph.save("clause-graph-v1.json")
+    clause_graph.save("clause-graph-v0.json")
 
 
 if __name__ == "__main__":
