@@ -103,20 +103,3 @@ class RationaleAgent(Agent):
             f"</claim>\n"
         )
 
-    def to_schema(self, rationale: str) -> Rationale:
-        """
-        Answer to Rationale Schema
-        """
-
-        result = self.structured_llm.invoke(
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        f"Given this rationale analysis result:\n\n{rationale}\n\n"
-                        f"Convert it to a structured format"
-                    ),
-                }
-            ]
-        )
-        return result

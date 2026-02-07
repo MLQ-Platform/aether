@@ -2,7 +2,6 @@ from aether.llm.agent import OpenAIToolCallAdapter
 from aether.llm.agent import ReactAgent
 from aether.llm.agent import Tool
 from aether.llm.agent import ToolCallAdapter
-from aether.llm.agent import ToolRegistry
 from aether.llm.base import BaseLLM
 from aether.llm.prompt import PromptLoader
 from aether.llm.structured import StructuredLLM
@@ -15,7 +14,6 @@ __all__ = [
     "StructuredLLM",
     # Agent
     "ReactAgent",
-    "ToolRegistry",
     # Tools
     "Tool",
     "ToolCallAdapter",

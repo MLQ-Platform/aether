@@ -1,5 +1,3 @@
-import json
-from pathlib import Path
 from typing import Dict
 from typing import List
 from aether.agents.claim.schema import Claim
@@ -37,19 +35,6 @@ class StatementGraph:
         """
         if from_id in self.nodes and to_id in self.nodes:
             self.nodes[from_id].add_edge(to_id)
-
-    def display_graph(self):
-        """
-        Display the graph
-        """
-        for nid, node in self.nodes.items():
-            print(f"Node ID: {nid}")
-            print(f"  Type: {node.node_type}")
-            if node.edges:
-                print(f"  Connected to: {', '.join(node.edges)}")
-            else:
-                print("  Connected to: None")
-            print("-" * 40)
 
     def to_dict(self, accepted_only: bool = True) -> dict:
         """

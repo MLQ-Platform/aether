@@ -1,13 +1,8 @@
 from typing import Any
 from typing import Dict
 from typing import Optional
-from typing import TypeVar
 from openai import OpenAI
-from pydantic import BaseModel
-from aether.llm.structured import StructuredLLM
 from aether.llm.types import Messages
-
-T = TypeVar("T")
 
 
 class BaseLLM:
@@ -63,38 +58,6 @@ class BaseLLM:
         )
 
         return completion.choices[0].message.content
-
-    def bind(self, **kwargs) -> "BaseLLM":
-        """
-        파라미터를 바인딩한 새로운 LLM 인스턴스 생성
-        """
-        new_params = {**self.default_params, **kwargs}
-
-        return BaseLLM(
-            client=self.client,
-            model=kwargs.get("model", self.model),
-            temperature=kwargs.get("temperature", self.temperature),
-            max_tokens=kwargs.get("max_tokens", self.max_tokens),
-            **{
-                k: v
-                for k, v in new_params.items()
-                if k not in ["model", "temperature", "max_tokens"]
-            },
-        )
-
-    def with_structured_output(self, schema: type[BaseModel]):
-        """
-        Structured output을 생성하는 LLM 인스턴스 리턴
-        """
-
-        return StructuredLLM(
-            client=self.client,
-            model=self.model,
-            temperature=self.temperature,
-            max_tokens=self.max_tokens,
-            schema=schema,
-            **self.default_params,
-        )
 
     def _prepare_params(self, override_params: Dict[str, Any]) -> Dict[str, Any]:
         """

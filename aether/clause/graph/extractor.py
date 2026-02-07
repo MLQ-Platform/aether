@@ -1,11 +1,9 @@
 import random
 from typing import Optional
 from typing import Set
-import networkx as nx
 import numpy as np
 from aether.clause.graph.base import ClauseGraph
 from aether.logger import get_logger
-from aether.utils import generate_uuid
 
 logger = get_logger(__name__)
 
@@ -20,11 +18,6 @@ class SubgraphExtractor:
 
     def __init__(self, graph: ClauseGraph):
         self.graph = graph
-
-    @classmethod
-    def set_params(cls, restart_prob: float, length_factor: float):
-        cls.RESTART_PROB = restart_prob
-        cls.LENGTH_FACTOR = length_factor
 
     def extract(self, size: int, start_node: Optional[int] = None) -> ClauseGraph:
         """

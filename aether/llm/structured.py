@@ -1,15 +1,12 @@
 import json
 import re
 from typing import Optional
-from typing import TypeVar
 from typing import Union
 from openai import AsyncOpenAI
 from openai import OpenAI
 from pydantic import BaseModel
 from pydantic import ValidationError
 from aether.llm.types import Messages
-
-T = TypeVar("T", bound=BaseModel)
 
 
 class StructuredLLM:

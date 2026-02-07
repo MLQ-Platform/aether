@@ -1,10 +1,5 @@
-from collections import Counter
-from typing import Any
-from typing import Callable
-from typing import List
 import numpy as np
 import pandas as pd
-from aether.clause.tree.base import ClauseTree
 from aether.logger import get_logger
 
 logger = get_logger(__name__)
