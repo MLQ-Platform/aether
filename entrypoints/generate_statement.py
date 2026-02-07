@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import List
 from typing import Tuple
 from pydantic import BaseModel
@@ -9,38 +10,22 @@ from aether.agents.rationale.schema import Rationale
 from aether.agents.statement.graph import StatementGraph
 from aether.agents.statement.graph.node import Node
 from aether.agents.statement.schema import Statement
-from aether.agents.thesis.schema import Thesis
-from aether.clause.graph import ClauseGraph
-from aether.clause.tree.base import ClauseTree
+from aether.llm.agent import ReactAgent
+from aether.logger import get_logger
 from aether.provider import InMemoryDataProvider
 from aether.utils import add_uuid
 from aether.utils import generate_uuid
+from aether.utils import load_json
+from aether.utils import save_json
+
+logger = get_logger(__name__)
 
 
-def load_clause_graph(filepath: str) -> ClauseGraph:
-    clause_graph = ClauseGraph.load(filepath)
-    return clause_graph
-
-
-def generate_sub_clause(clause_graph: ClauseGraph) -> ClauseGraph:
-    from aether.clause.graph.extractor import SubgraphExtractor
-
-    extractor = SubgraphExtractor(clause_graph)
-    subgraph = extractor.extract(size=2)
-    return subgraph
-
-
-def generate_thesis(tree_a: ClauseTree, tree_b: ClauseTree) -> Thesis:
-    thesis_agent = factory.get_thesis_agent()
-    thesis = thesis_agent.run(tree_a, tree_b)
-    thesis.uuid = generate_uuid()
-    return thesis
-
-
-def generate_claims(thesis: Thesis) -> List[Claim]:
-    claim_agent = factory.get_claim_agent()
-    claims = claim_agent.run(thesis.thesis)
-    claims = add_uuid(claims.claims)
+def sample_claims(claim_load_basedir: str) -> List[Claim]:
+    files = [f for f in os.listdir(claim_load_basedir) if f.endswith(".json")]
+    filepath = os.path.join(claim_load_basedir, files[0])
+    claims_dict = load_json(filepath)
+    claims = [Claim(**c) for c in claims_dict.values()]
     return claims
 
 
@@ -82,8 +67,10 @@ async def generate_rationales_async(
     exec_context = {"df": provider.get("BTCUSDT")}
 
     # Process all claims concurrently
+    # Each claim gets a copy of exec_context to avoid shared state issues
     tasks = [
-        rationale_agent.run_async(claim, exec_context=exec_context) for claim in claims
+        rationale_agent.run_async(claim, exec_context=exec_context.copy())
+        for claim in claims
     ]
     rationales = await asyncio.gather(*tasks, return_exceptions=True)
     rationales = add_uuid(rationales)
@@ -107,72 +94,102 @@ async def generate_rationales_modify_async(
     return claims
 
 
-async def main(TOTAL_ITERATIONS: int = 4, graph_filepath: str = "clause-graph-v1.json"):
+async def main(
+    TOTAL_ITERATIONS: int,
+    claim_load_basedir: str,
+    statement_save_basedir: str,
+):
     provider = factory.get_provider()
 
-    # Clause Graph 로드
-    clause = load_clause_graph(graph_filepath)
-    # Clause Graph에서 Sub-Clause 추출
-    subclause = generate_sub_clause(clause)
-    # Thesis 생성
-    thesis = generate_thesis(*subclause.clause_trees.values())
-    # Thesis로 Claim 생성
-    claims = generate_claims(thesis)
-
-    print(f"Generated Claims: {len(claims)}")
+    # Claims 로드
+    claims = sample_claims(claim_load_basedir)
+    logger.info(f"[Done] Claims Loaded: {len(claims)}")
 
     edges = []
     instances = []
     final_claims = []
 
-    instances.append(thesis)
     instances.extend(claims)
-    edges.extend([(thesis.uuid, c.uuid) for c in claims])
+    statement_graph = None
 
-    for i in range(TOTAL_ITERATIONS):
-        print(f"Iteration {i + 1} of {TOTAL_ITERATIONS}")
+    try:
+        for i in range(TOTAL_ITERATIONS):
+            logger.info(f"[Iteration {i + 1} of {TOTAL_ITERATIONS}]")
 
-        rationales = await generate_rationales_async(claims, provider=provider)
+            logger.info("[Start] Rationales Generation")
+            rationales = await generate_rationales_async(claims, provider=provider)
+            logger.info("[Done] Rationales Generated")
 
-        rejected_rationales: List[Rationale] = [
-            x[1] for x in zip(claims, rationales) if not x[1].is_accepted
-        ]
-        rejected_claims: List[Claim] = [
-            x[0] for x in zip(claims, rationales) if not x[1].is_accepted
-        ]
-        accepted_claims: List[Claim] = [
-            x[0] for x in zip(claims, rationales) if x[1].is_accepted
-        ]
-        final_claims.extend(accepted_claims)
+            rejected_rationales: List[Rationale] = [
+                x[1] for x in zip(claims, rationales) if not x[1].is_accepted
+            ]
+            rejected_claims: List[Claim] = [
+                x[0] for x in zip(claims, rationales) if not x[1].is_accepted
+            ]
+            accepted_claims: List[Claim] = [
+                x[0] for x in zip(claims, rationales) if x[1].is_accepted
+            ]
+            final_claims.extend(accepted_claims)
 
-        print(
-            f"Rejected Rationales & Claims: {len(rejected_rationales)} & {len(rejected_claims)}"
+            logger.info(f"Rejected Rationales: {len(rejected_rationales)}")
+            logger.info(f"Rejected Claims: {len(rejected_claims)}")
+
+            if not rejected_rationales:
+                logger.info("[Roop Done] No Rejected Rationales")
+                break
+
+            logger.info("[Start] Modified Rationales Generation")
+            modified_claims = await generate_rationales_modify_async(
+                rejected_claims, rejected_rationales
+            )
+            logger.info("[Done] Modified Rationales Generated")
+
+            instances.extend(rationales)
+            instances.extend(modified_claims)
+
+            edges.extend(
+                [(c.uuid, r.uuid) for c, r in zip(claims, rationales)],
+            )
+            edges.extend(
+                [(r.uuid, c.uuid) for r, c in zip(rejected_rationales, modified_claims)]
+            )
+
+            claims = modified_claims
+
+        logger.info("[Start] Statement Generation")
+        statement: Statement = generate_statement(final_claims)
+        logger.info("[Done] Statement Generated")
+        instances.append(statement)
+
+        logger.info("[Start] Statement Graph Generation")
+        statement_graph: StatementGraph = generate_statement_graph(instances, edges)
+        logger.info("[Done] Statement Graph Generated")
+
+        savepath = os.path.join(
+            statement_save_basedir, f"statement-{statement.uuid}.json"
         )
 
-        if not rejected_rationales:
-            break
+        save_json(statement_graph.to_dict(), savepath)
+        logger.info("[Done] Statement Graph Saved")
 
-        modified_claims = await generate_rationales_modify_async(
-            rejected_claims, rejected_rationales
-        )
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        raise e
 
-        instances.extend(rationales)
-        instances.extend(modified_claims)
+    finally:
+        # 무조건 실행: 쓰레드 풀 정리
+        logger.info("[Cleanup] Shutting down threads")
+        ReactAgent.shutdown()
+        logger.info("[Cleanup] Thread shutdown completed")
 
-        edges.extend(
-            [(c.uuid, r.uuid) for c, r in zip(claims, rationales)],
-        )
-        edges.extend(
-            [(r.uuid, c.uuid) for r, c in zip(rejected_rationales, modified_claims)]
-        )
-
-        claims = modified_claims
-
-    statement: Statement = generate_statement(final_claims)
-    instances.append(statement)
-    statement_graph: StatementGraph = generate_statement_graph(instances, edges)
     return statement_graph
 
 
 if __name__ == "__main__":
-    statement = asyncio.run(main())
+    statement = asyncio.run(
+        main(
+            TOTAL_ITERATIONS=2,
+            claim_load_basedir="database/claim",
+            statement_save_basedir="database/statement",
+        )
+    )

@@ -48,9 +48,7 @@ class InitialFactorStatementAgent(Agent):
                 ]
             )
 
-            logger.info(
-                f"[Success] Initial Factor Generation (Len: {len(result.statement)})"
-            )
+            logger.info("[Success] Initial Factor Generation")
 
         except Exception as e:
             logger.error(f"[Fail] Initial Factor Generation Error: {e}")

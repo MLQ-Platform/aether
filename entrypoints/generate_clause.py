@@ -1,4 +1,5 @@
 import argparse
+import os
 from typing import List
 from typing import Optional
 from aether import factory
@@ -14,11 +15,11 @@ logger = get_logger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num-edges", type=int, default=1000)
-    parser.add_argument("--sim-thr", type=float, default=0.2)
-    parser.add_argument("--weight-thr", type=float, default=0.3)
+    parser.add_argument("--num-edges", type=int, default=50)
+    parser.add_argument("--sim-thr", type=float, default=0.3)
+    parser.add_argument("--weight-thr", type=float, default=0.05)
     parser.add_argument("--min-signal-ratio", type=float, default=0.10)
-    parser.add_argument("--max-signal-ratio", type=float, default=0.40)
+    parser.add_argument("--max-signal-ratio", type=float, default=0.50)
     parser.add_argument("--max-iterations", type=int, default=1000)
     parser.add_argument("--max-depth", type=int, default=3)
     parser.add_argument("--num-trees", type=int, default=5)
@@ -70,7 +71,10 @@ def generate_clause(
     return clause_graph
 
 
-def main():
+def main(
+    virsion: str,
+    clause_save_basedir: str,
+):
     """
     Clause Graph Generation Entrypoint
     """
@@ -81,6 +85,16 @@ def main():
 
     clause_graph = None
     iter_ = 0
+
+    logger.info(
+        f"[Param] Similarity Threshold: {args.sim_thr}\n"
+        f"[Param] Weight Threshold: {args.weight_thr}\n"
+        f"[Param] Minimum Signal Ratio: {args.min_signal_ratio}\n"
+        f"[Param] Maximum Signal Ratio: {args.max_signal_ratio}\n"
+        f"[Param] Maximum Iterations: {args.max_iterations}\n"
+        f"[Param] Maximum Depth: {args.max_depth}\n"
+        f"[Param] Number of Trees: {args.num_trees}"
+    )
 
     while True:
         iter_ += 1
@@ -108,8 +122,12 @@ def main():
         if num_edges > args.num_edges:
             break
 
-    clause_graph.save("clause-graph-v0.json")
+    savepath = os.path.join(clause_save_basedir, f"clause-{virsion}.json")
+    clause_graph.save(savepath)
 
 
 if __name__ == "__main__":
-    main()
+    main(
+        virsion="v0",
+        clause_save_basedir="database/clause",
+    )

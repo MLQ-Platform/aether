@@ -42,6 +42,14 @@ def pyexecutor(code: str, exec_context: dict = {}) -> tuple[str, dict]:
     stdout_output = f.getvalue()
     result = exec_context.get("result", None)
 
+    # Clean up intermediate variables to prevent memory accumulation
+    # Keep only essential context: df, np, pd, sp, result
+    essential_keys = {"df", "np", "pd", "sp", "result"}
+    keys_to_remove = [k for k in exec_context.keys() if k not in essential_keys]
+
+    for key in keys_to_remove:
+        del exec_context[key]
+
     # Format output
     output_parts = []
     if stdout_output:

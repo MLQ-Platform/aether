@@ -159,6 +159,7 @@ def get_nodes(provider: InMemoryDataProvider) -> list:
     from aether.clause import nodes
 
     P = 10
+    END_DATE = "2025-01-01"
 
     NODES = [
         # 기본 수학 연산 노드들
@@ -193,18 +194,84 @@ def get_nodes(provider: InMemoryDataProvider) -> list:
         nodes.DrawdownExceed(pct=0.1, lookback=P),
         nodes.JumpDetect(period=P, q_tail=0.1),
         # 데이터 노드들 (label 파라미터 필요)
-        nodes.DATA(label="OPEN", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="HIGH", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="LOW", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="CLOSE", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="VOLUME", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="PREMIUM_INDEX_CLOSE", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="FUNDING_RATE", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="RETURN", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="VWAP", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="VWAP", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="HOUR_SIN", ticker="BTCUSDT", provider=provider),
-        nodes.DATA(label="HOUR_COS", ticker="BTCUSDT", provider=provider),
+        nodes.DATA(
+            label="OPEN",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="HIGH",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="LOW",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="CLOSE",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="VOLUME",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="PREMIUM_INDEX_CLOSE",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="PREMIUM_INDEX_OPEN",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="PREMIUM_INDEX_HIGH",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="PREMIUM_INDEX_LOW",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="TAKER_BUY_VOLUME",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="TAKER_SELL_VOLUME",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="FUNDING_SCORE",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
+        nodes.DATA(
+            label="ORDER_FLOW_IMBALANCE",
+            ticker="BTCUSDT",
+            provider=provider,
+            end_date=END_DATE,
+        ),
     ]
 
     return NODES

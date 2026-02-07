@@ -44,36 +44,14 @@ columns:
     type: float64
     description: "Volume executed by market sell orders (takers) that immediately match with limit buy orders in the orderbook. Represents aggressive selling pressure from market participants accepting the bid price for immediate execution."
   
-  FUNDING_RATE:
+  FUNDING_SCORE:
     type: float64
-    description: "Periodic payment rate exchanged between long and short positions every 8 hours in perpetual futures contracts. Positive rates mean longs pay shorts (indicating bullish leverage demand), negative rates mean shorts pay longs (indicating bearish leverage demand)."
+    description: "Periodic payment rate exchanged between long and short positions in perpetual futures contracts. Positive rates mean longs pay shorts (indicating bullish leverage demand), negative rates mean shorts pay longs (indicating bearish leverage demand)."
   
   # Derived Order Flow Metrics
   ORDER_FLOW_IMBALANCE:
     type: float64
     description: "Net aggressive order flow calculated as (TAKER_BUY_VOLUME - TAKER_SELL_VOLUME) / VOLUME, normalized between -1 and 1. Positive values indicate dominant buying pressure, negative values indicate dominant selling pressure, measuring directional aggression in market orders."
-  
-  TRADE_INTENSITY:
-    type: float64
-    description: "Measure of trading activity velocity, calculated as volume per unit time or price movement. High intensity indicates heightened market participation and liquidity turnover."
-  
-  # Price-Based Derived Features
-  RETURN:
-    type: float64
-    description: "Period-over-period logarithmic or simple percentage return, calculated as (CLOSE - CLOSE_prev) / CLOSE_prev."
-  
-  VWAP:
-    type: float64
-    description: "Volume-weighted average price over the period, calculated as Σ(price * volume) / Σ(volume). Represents the average execution price weighted by trade size, often used as a benchmark for institutional order execution quality."
-  
-  # Temporal Cyclical Encoding (for Neural Networks)
-  HOUR_SIN:
-    type: float64
-    description: "Sine transformation of hour (0-23) using sin(2pi * hour / 24), encoding time of day as continuous cyclical feature."
-  
-  HOUR_COS:
-    type: float64
-    description: "Cosine transformation of hour (0-23) using cos(2pi * hour / 24), complementing HOUR_SIN to preserve full temporal information without ordinal discontinuity at midnight."
 
 # Index column
 index:

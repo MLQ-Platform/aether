@@ -1,0 +1,44 @@
+{
+  "4032229027": {
+    "uuid": 4032229027,
+    "claim": "Historical high price momentum from 20 to 10 periods ago is positively correlated with the subsequent normalized moving average of open prices.",
+    "condition": "correlation(momentum(HIGH, window=10, shift=10), sma(OPEN, window=20) / sma(OPEN, window=200)) > 0.3",
+    "data_columns": [
+      "HIGH",
+      "OPEN"
+    ],
+    "verification_plan": "Calculate the momentum of the HIGH price over a 10-period window, lagged by 10 periods. Calculate the normalized moving average of OPEN prices (e.g., 20-period SMA divided by 200-period SMA). Compute the Pearson correlation coefficient between these two series. Test the null hypothesis that the correlation is zero using a t-test. Report the correlation coefficient and its statistical significance."
+  },
+  "3650067908": {
+    "uuid": 3650067908,
+    "claim": "The acceleration in the option premium index (rate of change of its rate of change) is negatively correlated with the subsequent normalized moving average of open prices.",
+    "condition": "correlation(acceleration(PREMIUM_INDEX_CLOSE, window=5), sma(OPEN, window=20) / sma(OPEN, window=200)) < -0.2",
+    "data_columns": [
+      "PREMIUM_INDEX_CLOSE",
+      "OPEN"
+    ],
+    "verification_plan": "Calculate the acceleration of the PREMIUM_INDEX_CLOSE as the second derivative (or the difference of successive momentum values over a 5-period window). Calculate the normalized moving average of OPEN prices. Compute the Pearson correlation between the acceleration series and the subsequent normalized price series. Perform a statistical test against the null hypothesis of zero correlation. The expected negative relationship indicates that rapid premium index changes precede lower normalized prices."
+  },
+  "35851426": {
+    "uuid": 35851426,
+    "claim": "When historical high price momentum exceeds the acceleration of the premium index, the probability of the normalized open price moving average reaching a new 20-period high in the subsequent 5 periods is significantly greater than 50%.",
+    "condition": "P(sma(OPEN, window=20) / sma(OPEN, window=200) > rolling_max(sma(OPEN, window=20) / sma(OPEN, window=200), window=20), lookahead=5 | momentum(HIGH, window=10, shift=10) > acceleration(PREMIUM_INDEX_CLOSE, window=5)) > 0.5",
+    "data_columns": [
+      "HIGH",
+      "PREMIUM_INDEX_CLOSE",
+      "OPEN"
+    ],
+    "verification_plan": "Identify all periods where the condition (historical HIGH momentum > premium index acceleration) is true. For each such period, check if the normalized open price moving average achieves a new 20-period high within the next 5 periods. Calculate the empirical probability. Compare this probability to 0.5 using a binomial test or a proportion z-test to determine if it is statistically significantly greater."
+  },
+  "303076301": {
+    "uuid": 303076301,
+    "claim": "The difference between historical high price momentum and premium index acceleration is positively correlated with the magnitude of subsequent price volatility.",
+    "condition": "correlation(momentum(HIGH, window=10, shift=10) - acceleration(PREMIUM_INDEX_CLOSE, window=5), std(CLOSE, window=10, shift=-5)) > 0.25",
+    "data_columns": [
+      "HIGH",
+      "PREMIUM_INDEX_CLOSE",
+      "CLOSE"
+    ],
+    "verification_plan": "Compute the time series of the difference (momentum - acceleration). Compute the future realized volatility (standard deviation of CLOSE prices over a 10-period window, starting 5 periods ahead). Calculate the Pearson correlation between the difference series and the future volatility series. Test for significance against a null of zero correlation. A positive correlation supports the thesis that the indicator gap signals increased future volatility."
+  }
+}

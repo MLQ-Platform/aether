@@ -16,6 +16,8 @@ class DATA(Node):
         label: str,
         ticker: str,
         provider: Optional[InMemoryDataProvider] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ):
         super(DATA, self).__init__(
             input_types=[],
@@ -25,6 +27,8 @@ class DATA(Node):
         self.label = label
         self.ticker = ticker
         self.provider = provider
+        self.start_date = start_date
+        self.end_date = end_date
 
     @property
     def name(self):
@@ -32,10 +36,13 @@ class DATA(Node):
 
     @property
     def params(self) -> dict:
-        return {
+        params = {
             "label": self.label,
             "ticker": self.ticker,
+            "start_date": self.start_date,
+            "end_date": self.end_date,
         }
+        return params
 
     def activate(self):
         if not self.provider:
@@ -44,7 +51,13 @@ class DATA(Node):
         if not self.provider.has(self.ticker):
             raise ValueError(f"No data for {self.ticker}")
 
-        return self.provider.get(self.ticker)[self.label]
+        series = self.provider.get(self.ticker)[self.label]
+
+        # Apply datetime slicing if start_date or end_date is provided
+        if self.start_date or self.end_date:
+            series = series.loc[self.start_date : self.end_date]
+
+        return series
 
 
 class SMA(Node):

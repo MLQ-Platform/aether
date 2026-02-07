@@ -1,4 +1,5 @@
 import asyncio
+import atexit
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 from typing import Optional
@@ -17,6 +18,7 @@ class ReactAgent:
 
     # Shared ThreadPoolExecutor for all instances
     _shared_executor: Optional[ThreadPoolExecutor] = None
+    _shutdown_registered = False
 
     def __init__(
         self,
@@ -132,7 +134,7 @@ class ReactAgent:
         """
         Async Agent 실행
         """
-        TOOL_TIMEOUT = 30
+        TOOL_TIMEOUT = 180
 
         task_id = task_id or generate_task_id()
 
@@ -145,6 +147,7 @@ class ReactAgent:
         # Use shared ThreadPoolExecutor (lazy initialization)
         if ReactAgent._shared_executor is None:
             ReactAgent._shared_executor = ThreadPoolExecutor(max_workers=1)
+            ReactAgent._ensure_shutdown_registered()
 
         executor = ReactAgent._shared_executor
         loop = asyncio.get_event_loop()
@@ -239,3 +242,38 @@ class ReactAgent:
             f"[Task ID: {task_id}] [Done] final answer generation (By Max Iteration Reached) Iter: {iteration + 1}"
         )
         return final_content
+
+    @classmethod
+    def shutdown(cls):
+        """
+        Public method to explicitly shutdown the executor.
+        Call this when you're done using ReactAgent instances.
+        """
+        cls._shutdown_executor(wait=True)
+
+    @classmethod
+    def _shutdown_executor(cls, wait: bool = True):
+        """
+        Cleanup method to shutdown the shared executor
+
+        Args:
+            wait: If True, wait for all pending tasks to complete. If False, shutdown immediately.
+        """
+        if cls._shared_executor is not None:
+            try:
+                # 쓰레드가 완료될 때까지 기다리면서 정리
+                cls._shared_executor.shutdown(wait=wait)
+                logger.debug("ThreadPoolExecutor shutdown completed")
+            except Exception as e:
+                logger.warning(f"Error during executor shutdown: {e}")
+            finally:
+                cls._shared_executor = None
+
+    @classmethod
+    def _ensure_shutdown_registered(cls):
+        """
+        Register atexit handler to ensure executor is cleaned up
+        """
+        if not cls._shutdown_registered:
+            atexit.register(cls._shutdown_executor)
+            cls._shutdown_registered = True

@@ -87,25 +87,3 @@ class StatementGraph:
             graph_dict[node.node_id] = node.instance.model_dump()
 
         return graph_dict
-
-    def save(self, filepath: str, accepted_only: bool = True):
-        """
-        Save the graph to a JSON file
-        """
-        filepath = Path(filepath)
-        filepath.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
-
-        logger.info(f"[Success] Statement Graph saved to {filepath}")
-
-    def load(cls, filepath: str) -> dict:
-        """
-        Load the JSON file
-        """
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        logger.info(f"[Success] Statement Graph loaded from {filepath}")
-        return data

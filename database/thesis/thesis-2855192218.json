@@ -1,0 +1,4 @@
+{
+  "uuid": 2855192218,
+  "thesis": "In markets where derivative pricing influences spot price dynamics, the condition where historical high price momentum (from 20 to 10 periods ago) exceeds the acceleration in option premium index tends to coincide with new highs in the normalized moving average of open prices. This relationship exists because aggressive option activity, reflected in premium changes, often aligns with price extremes, and when spot momentum outpaces derivative market adjustments, it signals overbought conditions driven by sentiment shifts. Thus, these interdependent indicators highlight regimes where price peaks are likely to precede reversals or increased volatility, offering a testable signal for trend exhaustion."
+}
