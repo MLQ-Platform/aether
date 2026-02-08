@@ -48,10 +48,10 @@ class InitialFactorStatementAgent(Agent):
                 ]
             )
 
-            logger.info("[Success] Initial Factor Generation")
+            logger.info("Initial factor statement generated")
 
         except Exception as e:
-            logger.error(f"[Fail] Initial Factor Generation Error: {e}")
+            logger.error(f"Initial factor generation failed: {e}")
             return None
 
         return result
@@ -100,10 +100,10 @@ class ProofCheckAgent(Agent):
                 ]
             )
 
-            logger.info("[Success] Factor Proof Check Generation")
+            logger.info("Proof check completed")
 
         except Exception as e:
-            logger.error(f"[Fail] Factor Proof Check Generation Error: {e}")
+            logger.error(f"Proof check failed: {e}")
             return None
 
         return result
@@ -152,10 +152,10 @@ class ProofFixAgent(Agent):
                 ]
             )
 
-            logger.info("[Success] Factor Proof Fix Generation")
+            logger.info("Proof fix applied")
 
         except Exception as e:
-            logger.error(f"[Fail] Factor Proof Fix Generation Error: {e}")
+            logger.error(f"Proof fix failed: {e}")
             return None
 
         return result
@@ -213,10 +213,10 @@ class FactorCodeAgent(Agent):
                 ]
             )
 
-            logger.info("[Success] Factor Code Generation")
+            logger.info("Factor code generated")
 
         except Exception as e:
-            logger.error(f"[Fail] Factor Code Generation Error: {e}")
+            logger.error(f"Factor code generation failed: {e}")
             return None
 
         return result

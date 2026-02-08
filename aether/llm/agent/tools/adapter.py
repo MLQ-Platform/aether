@@ -138,7 +138,7 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
                 )
 
             except json.JSONDecodeError as e:
-                logger.error(f"[Fail] Failed to JSON decode tool arguments: {e}")
+                logger.warning(f"Tool argument JSON decode failed: {e}")
 
         return tool_calls
 

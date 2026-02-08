@@ -1,11 +1,11 @@
 import os
+from pathlib import Path
 from typing import Dict
 from typing import List
 from typing import NewType
 from typing import Optional
 import pandas as pd
 import pyarrow.parquet as pq
-from tqdm import tqdm
 
 Ticker = NewType("Ticker", str)
 
@@ -22,10 +22,14 @@ class InMemoryDataProvider:
         self,
         data_dir: Optional[str] = "data",
     ):
-        self._data_dir = data_dir
+
+        module_dir = Path(__file__).resolve().parents[2]
+        data_path = module_dir / data_dir
+
+        self._data_dir = data_path
 
         if not InMemoryDataProvider._store:
-            self.load(data_dir)
+            self.load(data_path)
 
     def load(self, data_dir: Optional[str] = None):
         """
@@ -34,7 +38,7 @@ class InMemoryDataProvider:
         if data_dir is None:
             data_dir = self._data_dir
 
-        for f in tqdm(os.listdir(data_dir), desc="Loading dataframes ..."):
+        for f in os.listdir(data_dir):
             # file 명 규칙: {ticker}.parquet
             ticker = Ticker(f.split(".")[0])
             # parquet를 데이터프레임으로 불러오기

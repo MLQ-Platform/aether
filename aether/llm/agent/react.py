@@ -53,8 +53,8 @@ class ReactAgent:
 
         # ReAct Loop
         for iteration in range(self.max_iterations):
-            logger.info(
-                f"[Task ID: {task_id}] [Start] Iteration {iteration + 1}/{self.max_iterations}"
+            logger.debug(
+                f"[Task {task_id}] Iteration {iteration + 1}/{self.max_iterations}"
             )
 
             # 1. LLM Tool Calling 호출
@@ -67,19 +67,17 @@ class ReactAgent:
 
             # 2. Tool Call 확인 (비정상 케이스)
             if not self.adapter.has_tool_calls(response):
-                logger.warning(f"[Task ID: {task_id}] No tool call")
+                logger.warning(f"[Task {task_id}] No tool call")
                 continue
 
             # 3. Tool Call 추출 및 실행
             tool_calls = self.adapter.extract_tool_calls(response)
             # Tool call 시 LLM의 추론 과정(content) 확인 및 출력
             reasoning = self.adapter.get_final_content(response)
-            logger.info(
-                f"[Task ID: {task_id}] [Tool Call] Reasoning: {reasoning}",
+            logger.debug(
+                f"[Task {task_id}] Reasoning: {reasoning}",
             )
-            logger.info(
-                f"[Task ID: {task_id}] [Tool Call] execution {len(tool_calls)} tools started"
-            )
+            logger.debug(f"[Task {task_id}] Executing {len(tool_calls)} tools")
 
             for tool_call in tool_calls:
                 tool_name = tool_call["name"]
@@ -88,14 +86,12 @@ class ReactAgent:
                 try:
                     tool = self.tools[tool_name]
                     result = str(tool.func(**tool_args))
-                    logger.info(
-                        f"[Task ID: {task_id}] [Success] Tool {tool_name} execution completed"
-                    )
+                    logger.debug(f"[Task {task_id}] Tool {tool_name} completed")
 
                 except Exception as e:
                     result = f"Error executing tool {tool_name}: {str(e)}"
-                    logger.error(
-                        f"[Task ID: {task_id}] [Fail] Tool {tool_name} execution fail: {str(e)}"
+                    logger.warning(
+                        f"[Task {task_id}] Tool {tool_name} failed: {str(e)}"
                     )
 
                 # 결과를 메시지에 추가 (reasoning 포함)
@@ -118,9 +114,7 @@ class ReactAgent:
         )
         final_content = self.adapter.get_final_content(final_response)
 
-        logger.info(
-            f"[Task ID: {task_id}] [Done] final answer generation (By Max Iteration Reached)"
-        )
+        logger.info(f"[Task {task_id}] Agent completed")
         return final_content
 
     async def run_async(
@@ -154,8 +148,8 @@ class ReactAgent:
 
         # ReAct Loop
         for iteration in range(self.max_iterations):
-            logger.info(
-                f"[Task ID: {task_id}] [Start] Iteration {iteration + 1}/{self.max_iterations}"
+            logger.debug(
+                f"[Task {task_id}] Iteration {iteration + 1}/{self.max_iterations}"
             )
 
             # 1. LLM Tool Calling 호출 (async)
@@ -168,7 +162,7 @@ class ReactAgent:
 
             # 2. Tool Call 확인 (비정상 케이스)
             if not self.adapter.has_tool_calls(response):
-                logger.warning(f"[Task ID: {task_id}] No tool call")
+                logger.warning(f"[Task {task_id}] No tool call")
                 continue
 
             # 3. Tool Call 추출 및 실행
@@ -176,12 +170,10 @@ class ReactAgent:
             # Tool call 시 LLM의 추론 과정(content) 확인 및 출력
             reasoning = self.adapter.get_final_content(response)
 
-            logger.info(
-                f"[Task ID: {task_id}] [Tool Call] Reasoning: {reasoning}",
+            logger.debug(
+                f"[Task {task_id}] Reasoning: {reasoning}",
             )
-            logger.info(
-                f"[Task ID: {task_id}] [Tool Call] execution {len(tool_calls)} tools started"
-            )
+            logger.debug(f"[Task {task_id}] Executing {len(tool_calls)} tools")
 
             for tool_call in tool_calls:
                 tool_name = tool_call["name"]
@@ -203,19 +195,17 @@ class ReactAgent:
 
                     result, exec_context = tool_result
                     result = str(result)
-                    logger.info(
-                        f"[Task ID: {task_id}] [Success] Tool {tool_name} execution completed"
-                    )
+                    logger.debug(f"[Task {task_id}] Tool {tool_name} completed")
 
                 except asyncio.TimeoutError:
                     result = f"Error: Tool '{tool_name}' execution exceeded {TOOL_TIMEOUT} seconds timeout."
                     logger.error(
-                        f"[Task ID: {task_id}] [Fail] Tool {tool_name} execution fail: Timeout after {TOOL_TIMEOUT}s"
+                        f"[Task {task_id}] Tool {tool_name} timed out after {TOOL_TIMEOUT}s"
                     )
                 except Exception as e:
                     result = f"Error executing tool {tool_name}: {str(e)}"
-                    logger.error(
-                        f"[Task ID: {task_id}] [Fail] Tool {tool_name} execution fail: {str(e)}"
+                    logger.warning(
+                        f"[Task {task_id}] Tool {tool_name} failed: {str(e)}"
                     )
 
                 # 결과를 메시지에 추가 (reasoning 포함)
@@ -238,27 +228,15 @@ class ReactAgent:
         )
         final_content = self.adapter.get_final_content(final_response)
 
-        logger.info(
-            f"[Task ID: {task_id}] [Done] final answer generation (By Max Iteration Reached) Iter: {iteration + 1}"
-        )
+        logger.info(f"[Task {task_id}] Agent completed (iter: {iteration + 1})")
         return final_content
 
     @classmethod
     def shutdown(cls):
-        """
-        Public method to explicitly shutdown the executor.
-        Call this when you're done using ReactAgent instances.
-        """
         cls._shutdown_executor(wait=True)
 
     @classmethod
     def _shutdown_executor(cls, wait: bool = True):
-        """
-        Cleanup method to shutdown the shared executor
-
-        Args:
-            wait: If True, wait for all pending tasks to complete. If False, shutdown immediately.
-        """
         if cls._shared_executor is not None:
             try:
                 # 쓰레드가 완료될 때까지 기다리면서 정리
@@ -271,9 +249,6 @@ class ReactAgent:
 
     @classmethod
     def _ensure_shutdown_registered(cls):
-        """
-        Register atexit handler to ensure executor is cleaned up
-        """
         if not cls._shutdown_registered:
             atexit.register(cls._shutdown_executor)
             cls._shutdown_registered = True

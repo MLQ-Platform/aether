@@ -53,10 +53,10 @@ class ClaimDecompositionAgent(Agent):
                 ]
             )
 
-            logger.info(f"[Success] Claim List Generation (Num: {len(result.claims)})")
+            logger.info(f"Claims decomposed ({len(result.claims)} claims)")
 
         except Exception as e:
-            logger.error(f"[Fail] Claim List Generation Error: {e}")
+            logger.error(f"Claim decomposition failed: {e}")
             return None
 
         return result
@@ -105,10 +105,10 @@ class ClaimModifyAgent(Agent):
                 ]
             )
 
-            logger.info("[Success] Claim Modify Generation")
+            logger.info("Claim modified")
 
         except Exception as e:
-            logger.error(f"[Fail] Claim Modify Generation Error: {e}")
+            logger.error(f"Claim modification failed: {e}")
             return None
 
         return result

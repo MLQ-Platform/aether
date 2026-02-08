@@ -1,11 +1,8 @@
 import os
-from aether import factory
-from aether.agents.factor.schema import FactorCode
-from aether.agents.factor.schema import FactorStatement
-from aether.agents.factor.schema import ProofRevision
 from aether.agents.statement.schema import Statement
+from aether.config import get_config
 from aether.logger import get_logger
-from aether.utils import generate_uuid
+from aether.pipeline.factor import run_factor_revision
 from aether.utils import load_json
 from aether.utils import save_json
 
@@ -22,72 +19,25 @@ def sample_statement(statement_load_basedir: str) -> Statement:
     return statement
 
 
-def generate_initial_factor_statement(statement: Statement) -> FactorStatement:
-    initial_factor_agent = factory.get_initial_factor_agent()
-    initial_factor_statement = initial_factor_agent.run(statement.statement)
-    return initial_factor_statement
-
-
-def generate_proof_check(factor_statement: FactorStatement) -> ProofRevision:
-    proof_check_agent = factory.get_proof_check_agent()
-    proof_revision = proof_check_agent.run(factor_statement.proof)
-    return proof_revision
-
-
-def generate_fiexd_fator_statement(
-    initial_factor_statement: FactorStatement, revision: ProofRevision
-) -> FactorStatement:
-    proof_fix_agent = factory.get_proof_fix_agent()
-    fixed_factor_statement = proof_fix_agent.run(
-        initial_factor_statement.proof, revision
-    )
-    return fixed_factor_statement
-
-
-def generate_factor_code(factor_statement: FactorStatement) -> FactorCode:
-    factor_code_agent = factory.get_factor_code_agent()
-    factor_code = factor_code_agent.run(factor_statement.proof)
-    return factor_code
-
-
 def main(
-    REVISION_ITER=3,
-    statement_load_basedir: str = "database/statement",
-    factor_save_basedir: str = "database/factor",
+    statement_load_basedir: str = None,
+    factor_save_basedir: str = None,
 ):
-    logger.info(f"[Param] Revision Iter: {REVISION_ITER}")
+    config = get_config()
+    db_dir = config.data.database_dir
+    statement_load_basedir = statement_load_basedir or os.path.join(db_dir, "statement")
+    factor_save_basedir = factor_save_basedir or os.path.join(db_dir, "factor")
 
     statement = sample_statement(statement_load_basedir)
-    logger.info(f"[Done] Sample Statement: {statement.statement}")
-
-    factor_statement = generate_initial_factor_statement(statement)
-    logger.info("[Done] Generate Initial Factor Statement")
-
-    for _ in range(REVISION_ITER):
-        logger.info(f"[Iteration {_ + 1} of {REVISION_ITER}]")
-        revision = generate_proof_check(factor_statement)
-        logger.info("[Done] Generate Proof Check")
-
-        if revision.is_pass:
-            logger.info("[Done] No Revision Needed")
-            break
-
-        factor_statement = generate_fiexd_fator_statement(factor_statement, revision)
-        logger.info("[Done] Generate Fixed Factor Statement")
-
-    factor_statement.uuid = generate_uuid()
-    factor_code = generate_factor_code(factor_statement)
+    factor_statement, factor_code = run_factor_revision(statement, config=config)
     factor_dict = {**factor_statement.model_dump(), **factor_code.model_dump()}
 
+    os.makedirs(factor_save_basedir, exist_ok=True)
     savepath = os.path.join(factor_save_basedir, f"factor-{factor_statement.uuid}.json")
     save_json(factor_dict, savepath)
-    logger.info("[Done] Generate Factor Code")
+    logger.info(f"Factor saved to {savepath}")
     return factor_code
 
 
 if __name__ == "__main__":
-    factor_code = main(
-        REVISION_ITER=3,
-        statement_load_basedir="database/statement",
-        factor_save_basedir="database/factor",
-    )
+    main()

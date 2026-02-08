@@ -1,4 +1,5 @@
 from aether.config import Config
+from aether.config import get_config
 from aether.provider import InMemoryDataProvider
 
 
@@ -7,162 +8,177 @@ def get_provider():
     return provider
 
 
-def get_clause_generator(provider: InMemoryDataProvider):
+def get_clause_generator(provider: InMemoryDataProvider, config: Config = None):
     from aether.clause.tree.generator import ClauseGenerator
 
-    nodes = get_nodes(provider)
+    nodes = get_nodes(provider, config)
     generator = ClauseGenerator(nodes)
     return generator
 
 
-def get_client():
+def get_client(config: Config = None):
     from openai import OpenAI
 
-    config = Config()
+    config = config or get_config()
 
     client = OpenAI(
-        base_url=config.BASE_URL,
-        api_key=config.API_KEY,
+        base_url=config.llm.base_url,
+        api_key=config.llm.api_key,
+        timeout=config.llm.timeout,
+        max_retries=config.llm.max_retries,
     )
     return client
 
 
-def get_async_client():
+def get_async_client(config: Config = None):
     from openai import AsyncOpenAI
 
-    config = Config()
+    config = config or get_config()
 
     client = AsyncOpenAI(
-        base_url=config.BASE_URL,
-        api_key=config.API_KEY,
+        base_url=config.llm.base_url,
+        api_key=config.llm.api_key,
+        timeout=config.llm.timeout,
+        max_retries=config.llm.max_retries,
     )
     return client
 
 
-def get_thesis_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_thesis_agent(config: Config = None):
     from aether.agents import ThesisRevealingAgent
 
-    client = get_client()
+    config = config or get_config()
+    client = get_client(config)
 
     thesis_agent = ThesisRevealingAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
         system_promt_path="thesis-revealing.txt",
     )
     return thesis_agent
 
 
-def get_claim_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_claim_agent(config: Config = None):
     from aether.agents import ClaimDecompositionAgent
 
-    client = get_client()
+    config = config or get_config()
+    client = get_client(config)
 
     claim_agent = ClaimDecompositionAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
         system_promt_path="statement-claim.txt",
     )
     return claim_agent
 
 
-def get_statement_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_statement_agent(config: Config = None):
     from aether.agents import StatementAgent
 
-    client = get_client()
+    config = config or get_config()
+    client = get_client(config)
 
     statement_agent = StatementAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
         system_promt_path="statement-final.txt",
     )
     return statement_agent
 
 
-def get_rationale_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_rationale_agent(config: Config = None):
     from aether.agents import RationaleAgent
     from aether.agents.rationale.tools import tools
 
-    client = get_async_client()
+    config = config or get_config()
+    client = get_async_client(config)
 
     rationale_agent = RationaleAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
         tools=tools,
         system_promt_path="statement-rationale.txt",
-        max_iterations=10,
+        max_iterations=config.agent.react_max_iterations,
     )
     return rationale_agent
 
 
-def get_claim_modify_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_claim_modify_agent(config: Config = None):
     from aether.agents import ClaimModifyAgent
 
-    client = get_async_client()
+    config = config or get_config()
+    client = get_async_client(config)
 
     claim_modify_agent = ClaimModifyAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
         system_promt_path="statement-claim-modify.txt",
     )
     return claim_modify_agent
 
 
-def get_initial_factor_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_initial_factor_agent(config: Config = None):
     from aether.agents import InitialFactorStatementAgent
 
-    client = get_client()
+    config = config or get_config()
+    client = get_client(config)
 
     initial_factor_agent = InitialFactorStatementAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
     )
     return initial_factor_agent
 
 
-def get_proof_check_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_proof_check_agent(config: Config = None):
     from aether.agents import ProofCheckAgent
 
-    client = get_client()
+    config = config or get_config()
+    client = get_client(config)
 
     proof_check_agent = ProofCheckAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
     )
     return proof_check_agent
 
 
-def get_proof_fix_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_proof_fix_agent(config: Config = None):
     from aether.agents import ProofFixAgent
 
-    client = get_client()
+    config = config or get_config()
+    client = get_client(config)
 
     proof_fix_agent = ProofFixAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
     )
     return proof_fix_agent
 
 
-def get_factor_code_agent(model_name="deepseek/deepseek-v3.2-exp"):
+def get_factor_code_agent(config: Config = None):
     from aether.agents import FactorCodeAgent
 
-    client = get_client()
+    config = config or get_config()
+    client = get_client(config)
 
     factor_code_agent = FactorCodeAgent(
-        model=model_name,
+        model=config.llm.model,
         client=client,
     )
     return factor_code_agent
 
 
-def get_nodes(provider: InMemoryDataProvider) -> list:
+def get_nodes(provider: InMemoryDataProvider, config: Config = None) -> list:
     from aether.clause import nodes
 
-    P = 10
-    END_DATE = "2025-01-01"
+    config = config or get_config()
+    P = config.clause.period
+    END_DATE = config.data.end_date
+    TICKER = config.data.ticker
 
     NODES = [
-        # 기본 수학 연산 노드들
+        # Basic math operation nodes
         nodes.ADD(),
         nodes.DIV(),
         nodes.SUB(),
@@ -181,7 +197,7 @@ def get_nodes(provider: InMemoryDataProvider) -> list:
         nodes.KURT(period=P),
         nodes.ZEXP(period=P),
         nodes.ZSigmoid(period=P),
-        # 루트 노드들
+        # Root nodes
         nodes.CrossUp(),
         nodes.CrossDown(),
         nodes.Comparison(),
@@ -193,82 +209,82 @@ def get_nodes(provider: InMemoryDataProvider) -> list:
         nodes.PullbackWithinBand(period=P, k=0.5),
         nodes.DrawdownExceed(pct=0.1, lookback=P),
         nodes.JumpDetect(period=P, q_tail=0.1),
-        # 데이터 노드들 (label 파라미터 필요)
+        # Data nodes
         nodes.DATA(
             label="OPEN",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="HIGH",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="LOW",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="CLOSE",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="VOLUME",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="PREMIUM_INDEX_CLOSE",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="PREMIUM_INDEX_OPEN",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="PREMIUM_INDEX_HIGH",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="PREMIUM_INDEX_LOW",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="TAKER_BUY_VOLUME",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="TAKER_SELL_VOLUME",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="FUNDING_SCORE",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),
         nodes.DATA(
             label="ORDER_FLOW_IMBALANCE",
-            ticker="BTCUSDT",
+            ticker=TICKER,
             provider=provider,
             end_date=END_DATE,
         ),

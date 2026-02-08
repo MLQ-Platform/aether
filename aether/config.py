@@ -1,24 +1,111 @@
 from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
+from typing import Optional
 import yaml
 
 
 @dataclass
+class LLMConfig:
+    model: str = "deepseek/deepseek-v3.2-exp"
+    base_url: str = "https://openrouter.ai/api/v1"
+    api_key: Optional[str] = None
+    timeout: float = 120.0
+    max_retries: int = 3
+
+
+@dataclass
+class PipelineConfig:
+    total_iterations: int = 4
+    revision_iterations: int = 3
+    max_concurrent_requests: int = 5
+
+
+@dataclass
+class ClauseConfig:
+    num_trees: int = 10
+    max_depth: int = 3
+    period: int = 10
+    num_edges: int = 50
+    max_iterations: int = 1000
+    sim_threshold: float = 0.2
+    weight_threshold: float = 0.05
+    min_signal_ratio: float = 0.10
+    max_signal_ratio: float = 0.50
+
+
+@dataclass
+class DataConfig:
+    ticker: str = "BTCUSDT"
+    end_date: str = "2025-01-01"
+    data_dir: str = "data"
+    database_dir: str = "database"
+
+
+@dataclass
+class AgentConfig:
+    react_max_iterations: int = 10
+    tool_timeout: int = 180
+
+
+@dataclass
 class Config:
-    BASE_URL: str = None
-    API_KEY: str = None
+    llm: LLMConfig = field(default_factory=LLMConfig)
+    pipeline: PipelineConfig = field(default_factory=PipelineConfig)
+    clause: ClauseConfig = field(default_factory=ClauseConfig)
+    data: DataConfig = field(default_factory=DataConfig)
+    agent: AgentConfig = field(default_factory=AgentConfig)
 
     def __post_init__(self):
         import os
         import dotenv
 
-        dotenv.load_dotenv(dotenv_path="config/.env")
+        # Resolve project root from package location (aether/ -> project root)
+        project_root = Path(__file__).resolve().parent.parent
 
-        if self.BASE_URL is None:
-            self.BASE_URL = "https://openrouter.ai/api/v1"
+        dotenv.load_dotenv(dotenv_path=str(project_root / "config" / ".env"))
 
-        if self.API_KEY is None:
-            self.API_KEY = os.getenv("OPENROUTER_API_KEY")
+        if self.llm.api_key is None:
+            self.llm.api_key = os.getenv("OPENROUTER_API_KEY")
+
+        # Resolve relative paths to absolute (so CLI works from any CWD)
+        if not Path(self.data.data_dir).is_absolute():
+            self.data.data_dir = str(project_root / self.data.data_dir)
+        if not Path(self.data.database_dir).is_absolute():
+            self.data.database_dir = str(project_root / self.data.database_dir)
+
+    @classmethod
+    def from_yaml(cls, path: str = "config/aether.yaml") -> "Config":
+        config_path = Path(path)
+
+        if not config_path.exists():
+            return cls()
+
+        with open(config_path) as f:
+            data = yaml.safe_load(f) or {}
+
+        return cls(
+            llm=LLMConfig(**data.get("llm", {})),
+            pipeline=PipelineConfig(**data.get("pipeline", {})),
+            clause=ClauseConfig(**data.get("clause", {})),
+            data=DataConfig(**data.get("data", {})),
+            agent=AgentConfig(**data.get("agent", {})),
+        )
+
+
+_config: Optional[Config] = None
+
+
+def get_config(path: Optional[str] = None) -> Config:
+    global _config
+    if _config is None:
+        _config = Config.from_yaml(path) if path else Config.from_yaml()
+    return _config
+
+
+def reset_config():
+    global _config
+    _config = None
 
 
 class DataSchema:
@@ -27,13 +114,14 @@ class DataSchema:
     """
 
     def __init__(self, config_path: str = "config/schema.yaml"):
-        self.config_path = Path(config_path)
+        p = Path(config_path)
+        if not p.is_absolute():
+            project_root = Path(__file__).resolve().parent.parent
+            p = project_root / p
+        self.config_path = p
         self.data_schema = self._load()
 
     def _load(self) -> dict:
-        """
-        Load schema.yaml
-        """
         if not self.config_path.exists():
             raise FileNotFoundError(f"Schema file not found: {self.config_path}")
 
@@ -41,15 +129,9 @@ class DataSchema:
             return yaml.safe_load(f)
 
     def get_index_info(self) -> dict:
-        """
-        Get index column information
-        """
         return self.data_schema.get("index", {})
 
     def get_description(self, with_index: bool = False) -> str:
-        """
-        Get human-readable description for LLM context
-        """
         lines = ["Available Data Columns:"]
 
         columns = self.data_schema.get("columns", {})

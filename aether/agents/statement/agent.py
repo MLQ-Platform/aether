@@ -49,12 +49,10 @@ class StatementAgent(Agent):
                 ]
             )
 
-            logger.info(
-                f"[Success] Statement Generation (Len: {len(result.statement)})"
-            )
+            logger.info(f"Statement generated ({len(result.statement)} chars)")
 
         except Exception as e:
-            logger.error(f"[Fail] Statement Generation Error: {e}")
+            logger.error(f"Statement generation failed: {e}")
             return None
 
         return result

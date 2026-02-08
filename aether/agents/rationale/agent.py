@@ -63,12 +63,10 @@ class RationaleAgent(Agent):
 
             result = await self.to_schema_async(result)
 
-            logger.info(
-                f"[Success] Rationale Generation (Len: {len(result.rationale)})"
-            )
+            logger.info(f"Rationale generated ({len(result.rationale)} chars)")
 
         except Exception as e:
-            logger.error(f"[Fail] Rationale Generation Error: {e}")
+            logger.error(f"Rationale generation failed: {e}")
             return None
 
         return result
@@ -102,4 +100,3 @@ class RationaleAgent(Agent):
             f"<verification_plan>{claim.verification_plan}</verification_plan>\n"
             f"</claim>\n"
         )
-

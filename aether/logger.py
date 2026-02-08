@@ -1,19 +1,62 @@
-import sys
 from loguru import logger
+from aether.console import console
 
-# 기본 핸들러 제거
+_sink_id = None
+_cli_mode = False
+
+
+def _script_sink(message):
+    """Default sink for script/entrypoint mode: standard format."""
+    record = message.record
+    level = record["level"].name
+    name = record["extra"].get("name", record["module"])
+    time_str = record["time"].strftime("%H:%M:%S")
+    style = {
+        "DEBUG": "dim",
+        "INFO": "info",
+        "WARNING": "warning",
+        "ERROR": "error",
+    }.get(level, "info")
+    console.print(
+        f"[dim]{time_str}[/dim] [{style}]{level:<7}[/{style}] [cyan]{name}[/cyan] {record['message']}"
+    )
+
+
+def _cli_sink(message):
+    """CLI verbose sink: tree-style format with │ prefix."""
+    record = message.record
+    name = record["extra"].get("name", record["module"])
+    time_str = record["time"].strftime("%H:%M:%S")
+    console.print(
+        f" [dim]│[/dim]  [dim]{time_str}[/dim] [cyan]{name:<10}[/cyan] {record['message']}"
+    )
+
+
+def _cli_warn_sink(message):
+    """CLI default sink: tree-style for WARNING/ERROR only."""
+    record = message.record
+    level = record["level"].name
+    marker = "\u26a0" if level == "WARNING" else "\u2716"
+    style = "warning" if level == "WARNING" else "error"
+    console.print(f" [dim]│[/dim]  [{style}]{marker} {record['message']}[/{style}]")
+
+
+# Default: script mode (INFO level, standard format)
 logger.remove()
-# 핸들러 추가
-logger.add(
-    sys.stdout,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | <cyan>{extra[name]}</cyan> : <level>{message}</level>",
-    level="DEBUG",
-    colorize=True,
-)
+_sink_id = logger.add(_script_sink, level="INFO", colorize=False)
+
+
+def init_cli(verbose: bool = False):
+    """Initialize logger for CLI mode. Call this from cli.py callback."""
+    global _sink_id, _cli_mode
+    _cli_mode = True
+    logger.remove()
+    if verbose:
+        _sink_id = logger.add(_cli_sink, level="DEBUG", colorize=False)
+    else:
+        _sink_id = logger.add(_cli_warn_sink, level="WARNING", colorize=False)
 
 
 def get_logger(name: str, level: str = "INFO"):
-    """
-    Loguru 기반 로거 생성 함수
-    """
+    """Loguru-based logger factory."""
     return logger.bind(name=name)

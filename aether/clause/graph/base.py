@@ -34,7 +34,7 @@ class ClauseGraph:
         간선 가중치 계산 함수 설정
         """
         self.edge_calculator = calculator
-        logger.info("[Success] Graph edge calculator set")
+        logger.debug("Edge calculator set")
 
     def add_nodes(
         self,
@@ -84,7 +84,7 @@ class ClauseGraph:
                     self.clause_trees[tree2.tree_id] = tree2
                     edges_added += 1
 
-        logger.info(f"[Success] {edges_added} edges added")
+        logger.info(f"{edges_added} edges added")
 
     def _filter_with_ratio(
         self,
@@ -187,7 +187,7 @@ class ClauseGraph:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
 
-        logger.info(f"[Success] ClauseGraph saved to {filepath}")
+        logger.info(f"ClauseGraph saved to {filepath}")
 
     @classmethod
     def from_dict(cls, data: dict) -> "ClauseGraph":
@@ -202,7 +202,7 @@ class ClauseGraph:
             for tree_id, tree_data in data["clause_trees"].items()
         }
 
-        logger.info(f"[Success] ClauseGraph loaded with {graph.num_nodes} nodes")
+        logger.debug(f"ClauseGraph loaded ({graph.num_nodes} nodes)")
         return graph
 
     @classmethod
@@ -214,5 +214,5 @@ class ClauseGraph:
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        logger.info(f"[Success] ClauseGraph loaded from {filepath}")
+        logger.info(f"ClauseGraph loaded from {filepath}")
         return cls.from_dict(data)

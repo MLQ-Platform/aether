@@ -48,10 +48,10 @@ class ThesisRevealingAgent(Agent):
                 ]
             )
 
-            logger.info(f"[Success] Thesis Generation (Len: {len(result.thesis)})")
+            logger.info(f"Thesis generated ({len(result.thesis)} chars)")
 
         except Exception as e:
-            logger.error(f"[Fail] Thesis Generation Error: {e}")
+            logger.error(f"Thesis generation failed: {e}")
             return None
 
         return result

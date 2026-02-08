@@ -39,7 +39,7 @@ class SubgraphExtractor:
         nodes = subgraph.num_nodes
         edges = subgraph.num_edges
 
-        logger.info(f"[Success] Subgraph extracted (size: {nodes}, edges: {edges})")
+        logger.debug(f"Subgraph extracted ({nodes} nodes, {edges} edges)")
         return subgraph
 
     def _traverse(self, size: int, start: int) -> Set[int]:
