@@ -1,6 +1,7 @@
 import os
 from aether.agents.thesis.schema import Thesis
 from aether.config import get_config
+from aether.config import resolve_path
 from aether.logger import get_logger
 from aether.pipeline.claim import generate_claims
 from aether.utils import load_json
@@ -22,7 +23,7 @@ def main(
     claim_save_basedir: str = None,
 ):
     config = get_config()
-    db_dir = config.data.database_dir
+    db_dir = resolve_path(config.data.database_dir)
     thesis_load_basedir = thesis_load_basedir or os.path.join(db_dir, "thesis")
     claim_save_basedir = claim_save_basedir or os.path.join(db_dir, "claim")
 

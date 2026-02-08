@@ -4,6 +4,17 @@ from pathlib import Path
 from typing import Optional
 import yaml
 
+# Project root: aether/ package parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def resolve_path(path: str) -> str:
+    """Resolve a relative path against the project root."""
+    p = Path(path)
+    if p.is_absolute():
+        return str(p)
+    return str(PROJECT_ROOT / p)
+
 
 @dataclass
 class LLMConfig:
@@ -60,23 +71,14 @@ class Config:
         import os
         import dotenv
 
-        # Resolve project root from package location (aether/ -> project root)
-        project_root = Path(__file__).resolve().parent.parent
-
-        dotenv.load_dotenv(dotenv_path=str(project_root / "config" / ".env"))
+        dotenv.load_dotenv(dotenv_path=resolve_path("config/.env"))
 
         if self.llm.api_key is None:
             self.llm.api_key = os.getenv("OPENROUTER_API_KEY")
 
-        # Resolve relative paths to absolute (so CLI works from any CWD)
-        if not Path(self.data.data_dir).is_absolute():
-            self.data.data_dir = str(project_root / self.data.data_dir)
-        if not Path(self.data.database_dir).is_absolute():
-            self.data.database_dir = str(project_root / self.data.database_dir)
-
     @classmethod
     def from_yaml(cls, path: str = "config/aether.yaml") -> "Config":
-        config_path = Path(path)
+        config_path = Path(resolve_path(path))
 
         if not config_path.exists():
             return cls()
@@ -114,11 +116,7 @@ class DataSchema:
     """
 
     def __init__(self, config_path: str = "config/schema.yaml"):
-        p = Path(config_path)
-        if not p.is_absolute():
-            project_root = Path(__file__).resolve().parent.parent
-            p = project_root / p
-        self.config_path = p
+        self.config_path = Path(resolve_path(config_path))
         self.data_schema = self._load()
 
     def _load(self) -> dict:

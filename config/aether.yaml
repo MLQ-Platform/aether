@@ -18,7 +18,7 @@ clause:
   max_depth: 3
   period: 10
   num_edges: 500
-  max_iterations: 10000
+  max_iterations: 100000000
   sim_threshold: 0.2
   weight_threshold: 0.05
   min_signal_ratio: 0.10

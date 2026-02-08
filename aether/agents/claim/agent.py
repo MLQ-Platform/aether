@@ -61,6 +61,39 @@ class ClaimDecompositionAgent(Agent):
 
         return result
 
+    async def run_async(self, thesis: str) -> ClaimList:
+        """
+        Claim Decomposition Agent Run (async)
+        """
+        user_prompt = self.user_message(thesis)
+
+        schema = DataSchema()
+        schema_description = schema.get_description(with_index=False)
+
+        system_prompt = load_prompt(
+            self.system_promt_path, DATA_DESCRIPTIONS=schema_description
+        )
+
+        try:
+            result = await self.llm.invoke_async(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    },
+                ]
+            )
+            logger.info(f"Claims decomposed ({len(result.claims)} claims)")
+        except Exception as e:
+            logger.error(f"Claim decomposition failed: {e}")
+            return None
+
+        return result
+
     def user_message(self, thesis: str) -> str:
         """
         User Message

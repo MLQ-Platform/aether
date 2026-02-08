@@ -56,6 +56,33 @@ class ThesisRevealingAgent(Agent):
 
         return result
 
+    async def run_async(self, tree_a: ClauseTree, tree_b: ClauseTree) -> Thesis:
+        """
+        Thesis Revealing Agent Run (async)
+        """
+        user_message = self.user_message(tree_a, tree_b)
+        system_prompt = load_prompt(self.system_promt_path)
+
+        try:
+            result = await self.llm.invoke_async(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_message,
+                    },
+                ]
+            )
+            logger.info(f"Thesis generated ({len(result.thesis)} chars)")
+        except Exception as e:
+            logger.error(f"Thesis generation failed: {e}")
+            return None
+
+        return result
+
     def user_message(self, tree_a: ClauseTree, tree_b: ClauseTree) -> str:
         """
         User Message

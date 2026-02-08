@@ -57,6 +57,33 @@ class StatementAgent(Agent):
 
         return result
 
+    async def run_async(self, claims: List[Claim]) -> str:
+        """
+        Statement Agent Run (async)
+        """
+        user_message = self.user_message(claims)
+        system_prompt = load_prompt(self.system_promt_path)
+
+        try:
+            result = await self.llm.invoke_async(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_message,
+                    },
+                ]
+            )
+            logger.info(f"Statement generated ({len(result.statement)} chars)")
+        except Exception as e:
+            logger.error(f"Statement generation failed: {e}")
+            return None
+
+        return result
+
     def user_message(self, claims: List[Claim]) -> str:
         """
         User Message

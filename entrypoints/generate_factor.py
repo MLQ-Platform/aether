@@ -1,6 +1,7 @@
 import os
 from aether.agents.statement.schema import Statement
 from aether.config import get_config
+from aether.config import resolve_path
 from aether.logger import get_logger
 from aether.pipeline.factor import run_factor_revision
 from aether.utils import load_json
@@ -24,7 +25,7 @@ def main(
     factor_save_basedir: str = None,
 ):
     config = get_config()
-    db_dir = config.data.database_dir
+    db_dir = resolve_path(config.data.database_dir)
     statement_load_basedir = statement_load_basedir or os.path.join(db_dir, "statement")
     factor_save_basedir = factor_save_basedir or os.path.join(db_dir, "factor")
 

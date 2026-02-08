@@ -2,7 +2,7 @@ import time
 from contextlib import contextmanager
 from aether.console import console
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 BAR = "[dim]│[/dim]"
 
 
@@ -21,10 +21,16 @@ def show_header(**context):
 
 
 class StepContext:
-    """Collects detail lines to display after a step completes."""
+    """Collects detail lines and allows live status updates."""
 
-    def __init__(self):
+    def __init__(self, status, label: str):
         self._details: list[str] = []
+        self._status = status
+        self._label = label
+
+    def update(self, text: str):
+        """Update the spinner text in real-time."""
+        self._status.update(f" [dim]◇[/dim]  {self._label}  [dim]{text}[/dim]")
 
     def detail(self, text: str):
         self._details.append(text)
@@ -36,13 +42,14 @@ def step_progress(label: str):
 
     Usage:
         with step_progress("Building Clause Graph") as ctx:
-            result = do_work()
-            ctx.detail("42 nodes, 18 edges")
+            for i in range(10):
+                ctx.update(f"{i} edges")   # live update next to spinner
+            ctx.detail("42 nodes, 18 edges")  # shown after completion
     """
-    ctx = StepContext()
     start = time.time()
     try:
-        with console.status(f" [dim]◇[/dim]  {label}...", spinner="dots"):
+        with console.status(f" [dim]◇[/dim]  {label}...", spinner="dots") as status:
+            ctx = StepContext(status, label)
             yield ctx
     except Exception:
         elapsed = time.time() - start

@@ -56,6 +56,33 @@ class InitialFactorStatementAgent(Agent):
 
         return result
 
+    async def run_async(self, market_statement: str) -> FactorStatement:
+        """
+        Initial Factor Statement Agent Run (async)
+        """
+        user_prompt = self.user_message(market_statement)
+        system_prompt = load_prompt(self.system_promt_path)
+
+        try:
+            result = await self.llm.invoke_async(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    },
+                ]
+            )
+            logger.info("Initial factor statement generated")
+        except Exception as e:
+            logger.error(f"Initial factor generation failed: {e}")
+            return None
+
+        return result
+
     def user_message(self, market_statement: str) -> str:
         """
         User Message
@@ -108,6 +135,33 @@ class ProofCheckAgent(Agent):
 
         return result
 
+    async def run_async(self, proof: str) -> ProofRevision:
+        """
+        Proof Check Agent Run (async)
+        """
+        user_prompt = self.user_message(proof)
+        system_prompt = load_prompt(self.system_promt_path)
+
+        try:
+            result = await self.llm.invoke_async(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    },
+                ]
+            )
+            logger.info("Proof check completed")
+        except Exception as e:
+            logger.error(f"Proof check failed: {e}")
+            return None
+
+        return result
+
     def user_message(self, proof: str) -> str:
         """
         User Message
@@ -154,6 +208,33 @@ class ProofFixAgent(Agent):
 
             logger.info("Proof fix applied")
 
+        except Exception as e:
+            logger.error(f"Proof fix failed: {e}")
+            return None
+
+        return result
+
+    async def run_async(self, proof: str, revisions: ProofRevision) -> FactorStatement:
+        """
+        Proof Fix Agent Run (async)
+        """
+        user_prompt = self.user_message(proof, revisions)
+        system_prompt = load_prompt(self.system_promt_path)
+
+        try:
+            result = await self.llm.invoke_async(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    },
+                ]
+            )
+            logger.info("Proof fix applied")
         except Exception as e:
             logger.error(f"Proof fix failed: {e}")
             return None
@@ -215,6 +296,39 @@ class FactorCodeAgent(Agent):
 
             logger.info("Factor code generated")
 
+        except Exception as e:
+            logger.error(f"Factor code generation failed: {e}")
+            return None
+
+        return result
+
+    async def run_async(self, proof: str) -> FactorCode:
+        """
+        Factor Code Agent Run (async)
+        """
+        user_prompt = self.user_message(proof)
+
+        schema = DataSchema()
+        schema_description = schema.get_description(with_index=False)
+
+        system_prompt = load_prompt(
+            self.system_promt_path, DATA_DESCRIPTIONS=schema_description
+        )
+
+        try:
+            result = await self.llm.invoke_async(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    },
+                ]
+            )
+            logger.info("Factor code generated")
         except Exception as e:
             logger.error(f"Factor code generation failed: {e}")
             return None

@@ -4,6 +4,7 @@ from typing import List
 from aether import factory
 from aether.agents.claim.schema import Claim
 from aether.config import get_config
+from aether.config import resolve_path
 from aether.llm.agent import ReactAgent
 from aether.logger import get_logger
 from aether.pipeline.statement import generate_statement
@@ -28,7 +29,7 @@ async def main(
     statement_save_basedir: str = None,
 ):
     config = get_config()
-    db_dir = config.data.database_dir
+    db_dir = resolve_path(config.data.database_dir)
     claim_load_basedir = claim_load_basedir or os.path.join(db_dir, "claim")
     statement_save_basedir = statement_save_basedir or os.path.join(db_dir, "statement")
 

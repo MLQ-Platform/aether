@@ -1,5 +1,6 @@
 import os
 from aether.config import get_config
+from aether.config import resolve_path
 from aether.logger import get_logger
 from aether.pipeline.clause import build_clause_graph
 
@@ -12,7 +13,7 @@ def main(
 ):
     config = get_config()
     clause_save_basedir = clause_save_basedir or os.path.join(
-        config.data.database_dir, "clause"
+        resolve_path(config.data.database_dir), "clause"
     )
 
     clause_graph = build_clause_graph(config)

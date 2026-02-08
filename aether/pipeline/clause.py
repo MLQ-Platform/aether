@@ -71,9 +71,13 @@ def load_clause_graph(basedir: str, version: str = "v0") -> ClauseGraph:
     return clause_graph
 
 
-def build_clause_graph(config: Config = None) -> ClauseGraph:
+def build_clause_graph(config: Config = None, on_progress=None) -> ClauseGraph:
     """
     Build a clause graph from scratch using config parameters.
+
+    Args:
+        config: Config object.
+        on_progress: Optional callback(num_edges, iteration) for live UI updates.
     """
     config = config or get_config()
     provider = factory.get_provider()
@@ -87,6 +91,9 @@ def build_clause_graph(config: Config = None) -> ClauseGraph:
 
         num_edges = clause_graph.num_edges
         logger.info(f"Clause iteration {iter_ + 1}: {num_edges} edges")
+
+        if on_progress:
+            on_progress(num_edges, iter_ + 1)
 
         if num_edges > config.clause.num_edges:
             break

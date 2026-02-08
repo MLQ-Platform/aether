@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aether"
-version = "0.1.0"
+version = "0.2.0"
 description = "Data-driven Hypothesis Generation Engine"
 authors = ["Yang-Hyun-Jun <sugumy@naver.com>"]
 readme = "README.md"
@@ -23,10 +23,6 @@ scipy = "^1.16.3"
 loguru = "^0.7.3"
 typer = ">=0.9.0"
 rich = "^13.0"
-ray = {version = ">=2.9.0", optional = true}
-
-[tool.poetry.extras]
-parallel = ["ray"]
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.30.1"

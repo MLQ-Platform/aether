@@ -169,6 +169,103 @@ def get_factor_code_agent(config: Config = None):
     return factor_code_agent
 
 
+# --- Async factory functions ---
+
+
+def get_async_thesis_agent(config: Config = None):
+    from aether.agents import ThesisRevealingAgent
+
+    config = config or get_config()
+    client = get_async_client(config)
+
+    thesis_agent = ThesisRevealingAgent(
+        model=config.llm.model,
+        client=client,
+        system_promt_path="thesis-revealing.txt",
+    )
+    return thesis_agent
+
+
+def get_async_claim_agent(config: Config = None):
+    from aether.agents import ClaimDecompositionAgent
+
+    config = config or get_config()
+    client = get_async_client(config)
+
+    claim_agent = ClaimDecompositionAgent(
+        model=config.llm.model,
+        client=client,
+        system_promt_path="statement-claim.txt",
+    )
+    return claim_agent
+
+
+def get_async_statement_agent(config: Config = None):
+    from aether.agents import StatementAgent
+
+    config = config or get_config()
+    client = get_async_client(config)
+
+    statement_agent = StatementAgent(
+        model=config.llm.model,
+        client=client,
+        system_promt_path="statement-final.txt",
+    )
+    return statement_agent
+
+
+def get_async_initial_factor_agent(config: Config = None):
+    from aether.agents import InitialFactorStatementAgent
+
+    config = config or get_config()
+    client = get_async_client(config)
+
+    initial_factor_agent = InitialFactorStatementAgent(
+        model=config.llm.model,
+        client=client,
+    )
+    return initial_factor_agent
+
+
+def get_async_proof_check_agent(config: Config = None):
+    from aether.agents import ProofCheckAgent
+
+    config = config or get_config()
+    client = get_async_client(config)
+
+    proof_check_agent = ProofCheckAgent(
+        model=config.llm.model,
+        client=client,
+    )
+    return proof_check_agent
+
+
+def get_async_proof_fix_agent(config: Config = None):
+    from aether.agents import ProofFixAgent
+
+    config = config or get_config()
+    client = get_async_client(config)
+
+    proof_fix_agent = ProofFixAgent(
+        model=config.llm.model,
+        client=client,
+    )
+    return proof_fix_agent
+
+
+def get_async_factor_code_agent(config: Config = None):
+    from aether.agents import FactorCodeAgent
+
+    config = config or get_config()
+    client = get_async_client(config)
+
+    factor_code_agent = FactorCodeAgent(
+        model=config.llm.model,
+        client=client,
+    )
+    return factor_code_agent
+
+
 def get_nodes(provider: InMemoryDataProvider, config: Config = None) -> list:
     from aether.clause import nodes
 

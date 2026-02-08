@@ -15,13 +15,11 @@ AETHER is a **Data-driven Hypothesis Generation Engine** for quantitative market
 poetry install
 
 # CLI (after poetry install)
-aether run                       # Full pipeline
 aether clause                    # Generate clause graph
 aether thesis                    # Generate thesis
 aether claim                     # Decompose claims
 aether statement                 # Verify & synthesize statement
 aether factor                    # Generate factor code
-aether parallel --num 4          # Parallel pipelines (requires Ray)
 aether config                    # Show current config
 
 # Legacy entrypoints (still work)
@@ -65,7 +63,7 @@ ruff format .
 
 ### Key Modules
 
-- **`aether/pipeline/`**: Consolidated pipeline logic (replaces duplicated code in `entrypoints/` and `main.py`). `runner.py` orchestrates the full pipeline. `parallel.py` provides Ray-based multi-pipeline execution.
+- **`aether/pipeline/`**: Consolidated pipeline logic for each stage (clause, thesis, claim, statement, factor).
 - **`aether/llm/`**: `BaseLLM` wraps the OpenAI client. `StructuredLLM` generates validated Pydantic models with retry logic. `ReactAgent` implements the ReAct loop for tool-calling agents.
 - **`aether/factory.py`**: Central creation point for all agents and clients. All factory functions accept an optional `Config` parameter (defaults to `get_config()`).
 - **`aether/cli.py`**: Typer-based CLI. Entry point registered as `aether` in `pyproject.toml`.
@@ -76,19 +74,13 @@ ruff format .
 
 - Rationale verification and claim modification run concurrently using `asyncio.gather` with `asyncio.Semaphore` to limit concurrent LLM requests (configurable via `pipeline.max_concurrent_requests`).
 - OpenAI client has built-in timeout + exponential backoff retry for 429/5xx errors (via `llm.timeout` and `llm.max_retries`).
-- Ray-based parallelism (`aether/pipeline/parallel.py`) runs multiple independent pipelines across processes.
 
 ## CLI Usage
 
 The CLI uses a clack-style interactive UI with spinners. Loguru logs are suppressed by default; only the display layer renders output. Use `-v` for verbose debug logs.
 
 ```bash
-# Full pipeline (6 stages with spinners)
-aether run
-aether run -v                    # Verbose: show all logs inline
-aether run --config custom.yaml  # Custom config file
-
-# Individual stages (each shows a spinner while processing)
+# Pipeline stages (each shows a spinner while processing)
 aether clause                    # Build clause graph (saved to database/clause/)
 aether clause --version v1       # Tag the clause graph version
 aether thesis                    # Generate thesis from clause graph v0
@@ -99,10 +91,6 @@ aether factor                    # Generate factor code from statement
 
 # Config
 aether config                    # Show current config in tree format
-
-# Parallel pipelines (requires: poetry install -E parallel)
-aether parallel --num 4          # Run 4 independent pipelines via Ray
-aether parallel --num 8 -c custom.yaml
 
 # All commands support:
 #   -v, --verbose    Show DEBUG-level logs

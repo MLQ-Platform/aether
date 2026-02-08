@@ -132,6 +132,16 @@ def generate_statement(
     return statement
 
 
+async def generate_statement_async(
+    final_claims: List[Claim],
+    config: Config = None,
+) -> Statement:
+    statement_agent = factory.get_async_statement_agent(config)
+    statement = await statement_agent.run_async(final_claims)
+    statement.uuid = generate_uuid()
+    return statement
+
+
 def generate_statement_graph(
     instances: List[BaseModel],
     edges: List[Tuple[str, str]],

@@ -76,3 +76,70 @@ def generate_factor_code(
     factor_code_agent = factory.get_factor_code_agent(config)
     factor_code = factor_code_agent.run(factor_statement.proof)
     return factor_code
+
+
+# --- Async versions ---
+
+
+async def run_factor_revision_async(
+    statement: Statement,
+    config: Config = None,
+) -> Tuple[FactorStatement, FactorCode]:
+    """Async version of run_factor_revision."""
+    config = config or get_config()
+
+    factor_statement = await generate_initial_factor_statement_async(
+        statement, config=config
+    )
+
+    for i in range(config.pipeline.revision_iterations):
+        revision = await generate_proof_check_async(factor_statement, config=config)
+        if revision.is_pass:
+            logger.info(f"Proof passed at revision {i + 1}")
+            break
+        factor_statement = await generate_fixed_factor_statement_async(
+            factor_statement, revision, config=config
+        )
+
+    factor_statement.uuid = generate_uuid()
+    factor_code = await generate_factor_code_async(factor_statement, config=config)
+    return factor_statement, factor_code
+
+
+async def generate_initial_factor_statement_async(
+    statement: Statement,
+    config: Config = None,
+) -> FactorStatement:
+    initial_factor_agent = factory.get_async_initial_factor_agent(config)
+    initial_factor_statement = await initial_factor_agent.run_async(statement.statement)
+    return initial_factor_statement
+
+
+async def generate_proof_check_async(
+    factor_statement: FactorStatement,
+    config: Config = None,
+) -> ProofRevision:
+    proof_check_agent = factory.get_async_proof_check_agent(config)
+    proof_revision = await proof_check_agent.run_async(factor_statement.proof)
+    return proof_revision
+
+
+async def generate_fixed_factor_statement_async(
+    initial_factor_statement: FactorStatement,
+    revision: ProofRevision,
+    config: Config = None,
+) -> FactorStatement:
+    proof_fix_agent = factory.get_async_proof_fix_agent(config)
+    fixed_factor_statement = await proof_fix_agent.run_async(
+        initial_factor_statement.proof, revision
+    )
+    return fixed_factor_statement
+
+
+async def generate_factor_code_async(
+    factor_statement: FactorStatement,
+    config: Config = None,
+) -> FactorCode:
+    factor_code_agent = factory.get_async_factor_code_agent(config)
+    factor_code = await factor_code_agent.run_async(factor_statement.proof)
+    return factor_code
