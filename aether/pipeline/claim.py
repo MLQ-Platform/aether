@@ -17,7 +17,7 @@ def generate_claims(thesis: Thesis, config: Config = None) -> List[Claim]:
 
 
 async def generate_claims_async(thesis: Thesis, config: Config = None) -> List[Claim]:
-    claim_agent = factory.get_async_claim_agent(config)
+    claim_agent = factory.get_claim_agent(config, async_=True)
     claims = await claim_agent.run_async(thesis.thesis)
     claims = add_uuid(claims.claims)
     return claims

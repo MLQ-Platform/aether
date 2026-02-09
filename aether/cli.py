@@ -87,15 +87,15 @@ def thesis(
     """Generate a thesis from a ClauseGraph subgraph."""
     try:
         from aether.config import get_config
+        from aether.pipeline.runner import run_thesis
+        from aether.pipeline.runner import run_thesis_parallel
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
         if parallel > 1:
-            from entrypoints.generate_thesis_parallel import main as parallel_main
-
             with step_progress(f"Generating {parallel} Theses (parallel)"):
                 asyncio.run(
-                    parallel_main(
+                    run_thesis_parallel(
                         clause_load_basedir=clause_dir,
                         thesis_save_basedir=output_dir,
                         clause_version=clause_version,
@@ -103,10 +103,8 @@ def thesis(
                     )
                 )
         else:
-            from entrypoints.generate_thesis import main
-
             with step_progress("Generating Thesis"):
-                main(
+                run_thesis(
                     clause_load_basedir=clause_dir,
                     thesis_save_basedir=output_dir,
                     clause_version=clause_version,
@@ -133,25 +131,23 @@ def claim(
     """Decompose a thesis into verifiable claims."""
     try:
         from aether.config import get_config
+        from aether.pipeline.runner import run_claim
+        from aether.pipeline.runner import run_claim_parallel
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
         if parallel > 1:
-            from entrypoints.generate_claim_parallel import main as parallel_main
-
             with step_progress(f"Decomposing Claims ({parallel} parallel)"):
                 asyncio.run(
-                    parallel_main(
+                    run_claim_parallel(
                         thesis_load_basedir=thesis_dir,
                         claim_save_basedir=output_dir,
                         num_parallel=parallel,
                     )
                 )
         else:
-            from entrypoints.generate_claim import main
-
             with step_progress("Decomposing Claims"):
-                main(thesis_load_basedir=thesis_dir, claim_save_basedir=output_dir)
+                run_claim(thesis_load_basedir=thesis_dir, claim_save_basedir=output_dir)
         show_closer("Done")
     except Exception as e:
         show_error_block("Claim Decomposition Failed", str(e))
@@ -174,28 +170,26 @@ def statement(
     """Verify claims and synthesize a statement."""
     try:
         from aether.config import get_config
+        from aether.pipeline.runner import run_statement
+        from aether.pipeline.runner import run_statement_parallel
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
         if parallel > 1:
-            from entrypoints.generate_statement_parallel import main as parallel_main
-
             with step_progress(
                 f"Verifying & Synthesizing Statement ({parallel} parallel)"
             ):
                 asyncio.run(
-                    parallel_main(
+                    run_statement_parallel(
                         claim_load_basedir=claim_dir,
                         statement_save_basedir=output_dir,
                         num_parallel=parallel,
                     )
                 )
         else:
-            from entrypoints.generate_statement import main
-
             with step_progress("Verifying & Synthesizing Statement"):
                 asyncio.run(
-                    main(
+                    run_statement(
                         claim_load_basedir=claim_dir,
                         statement_save_basedir=output_dir,
                     )
@@ -222,25 +216,23 @@ def factor(
     """Generate factor code from a statement."""
     try:
         from aether.config import get_config
+        from aether.pipeline.runner import run_factor
+        from aether.pipeline.runner import run_factor_parallel
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
         if parallel > 1:
-            from entrypoints.generate_factor_parallel import main as parallel_main
-
             with step_progress(f"Generating Factor ({parallel} parallel)"):
                 asyncio.run(
-                    parallel_main(
+                    run_factor_parallel(
                         statement_load_basedir=statement_dir,
                         factor_save_basedir=output_dir,
                         num_parallel=parallel,
                     )
                 )
         else:
-            from entrypoints.generate_factor import main
-
             with step_progress("Generating Factor"):
-                main(
+                run_factor(
                     statement_load_basedir=statement_dir,
                     factor_save_basedir=output_dir,
                 )

@@ -7,7 +7,7 @@ from typing import List
 from typing import Optional
 from openai import AsyncOpenAI
 from openai import OpenAI
-from aether.llm.agent.tools.base import Tool
+from aether.llm.react.tools.base import Tool
 from aether.logger import get_logger
 
 logger = get_logger(__name__)

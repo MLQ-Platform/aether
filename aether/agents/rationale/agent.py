@@ -6,9 +6,9 @@ from aether.agents.base import Agent
 from aether.agents.claim.schema import Claim
 from aether.agents.rationale.schema import Rationale
 from aether.config import DataSchema
-from aether.llm.agent import AsyncOpenAIToolCallAdapter
-from aether.llm.agent import ReactAgent
-from aether.llm.agent import Tool
+from aether.llm.react import AsyncOpenAIToolCallAdapter
+from aether.llm.react import ReactAgent
+from aether.llm.react import Tool
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
 from aether.exceptions import AgentExecutionError

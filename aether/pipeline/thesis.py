@@ -24,7 +24,7 @@ async def generate_thesis_async(
     tree_b: ClauseTree,
     config: Config = None,
 ) -> Thesis:
-    thesis_agent = factory.get_async_thesis_agent(config)
+    thesis_agent = factory.get_thesis_agent(config, async_=True)
     thesis = await thesis_agent.run_async(tree_a, tree_b)
     thesis.uuid = generate_uuid()
     return thesis

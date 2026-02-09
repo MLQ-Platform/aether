@@ -1,0 +1,45 @@
+{
+  "3414442913": {
+    "uuid": 3414442913,
+    "claim": "During periods of market stress, a surge in absolute volume momentum crossing above a specific threshold precedes a reversal in sentiment as measured by the normalized premium index crossing below a specific threshold.",
+    "condition": "lead_time(volume_momentum_surge(CLOSE, VOLUME, window=20, threshold=2.0) == True, premium_index_cross_below(PREMIUM_INDEX_CLOSE, threshold=-0.01) == True) > 0",
+    "data_columns": [
+      "CLOSE",
+      "VOLUME",
+      "PREMIUM_INDEX_CLOSE"
+    ],
+    "verification_plan": "Define volume momentum surge as a rolling standard deviation of volume returns exceeding 2.0 times its rolling mean. Define premium index reversal as crossing below -0.01. Compute lead time distribution between surge events and subsequent reversal events. Test if median lead time is significantly greater than zero using a one-sample t-test against null hypothesis of zero lead time."
+  },
+  "2991436290": {
+    "uuid": 2991436290,
+    "claim": "During periods of market stress, a surge in absolute volume momentum crossing above a specific threshold coincides with extreme order flow imbalance exceeding a specific negative threshold.",
+    "condition": "correlation(volume_momentum_surge(CLOSE, VOLUME, window=20, threshold=2.0), order_flow_imbalance_extreme(ORDER_FLOW_IMBALANCE, threshold=-0.7), window=5) > 0.5",
+    "data_columns": [
+      "CLOSE",
+      "VOLUME",
+      "ORDER_FLOW_IMBALANCE"
+    ],
+    "verification_plan": "Identify periods where volume momentum surge condition is true. In a 5-period window around these events, calculate the correlation between the binary surge indicator and a binary indicator for extreme order flow imbalance (ORDER_FLOW_IMBALANCE < -0.7). Test if the correlation coefficient is significantly greater than 0.5 using Fisher's z-transformation against the null hypothesis of no correlation."
+  },
+  "4073582891": {
+    "uuid": 4073582891,
+    "claim": "During periods of market stress, a reversal in sentiment (premium index crossing below threshold) is followed by a deceleration in aggressive selling as measured by taker sell volume acceleration dropping below zero.",
+    "condition": "lag_time(premium_index_cross_below(PREMIUM_INDEX_CLOSE, threshold=-0.01) == True, taker_sell_acceleration_below_zero(TAKER_SELL_VOLUME, window=10) == True) > 0",
+    "data_columns": [
+      "PREMIUM_INDEX_CLOSE",
+      "TAKER_SELL_VOLUME"
+    ],
+    "verification_plan": "Define taker sell acceleration as the second derivative (acceleration) of TAKER_SELL_VOLUME over a 10-period window. Identify events where premium index crosses below -0.01. Compute the lag time distribution until taker sell acceleration becomes negative. Test if median lag time is significantly greater than zero using a one-sample t-test against null hypothesis of zero lag time."
+  },
+  "556016927": {
+    "uuid": 556016927,
+    "claim": "During periods of market stress, the co-occurrence of a volume momentum surge and extreme order flow imbalance predicts a subsequent mean-reversion in derivatives pricing with higher probability than random chance.",
+    "condition": "probability_diff(mean_reversion_event(CLOSE, window=10, threshold=0.02) | (volume_momentum_surge(CLOSE, VOLUME, window=20, threshold=2.0) AND order_flow_imbalance_extreme(ORDER_FLOW_IMBALANCE, threshold=-0.7)), mean_reversion_event(CLOSE, window=10, threshold=0.02)) > 0.1",
+    "data_columns": [
+      "CLOSE",
+      "VOLUME",
+      "ORDER_FLOW_IMBALANCE"
+    ],
+    "verification_plan": "Define mean-reversion event as a price return exceeding 2% in the opposite direction of the prior trend within 10 periods. Calculate conditional probability of mean-reversion given the joint occurrence of volume surge and extreme order flow imbalance. Compare to unconditional probability of mean-reversion. Test if the probability difference exceeds 0.1 using a two-proportion z-test."
+  }
+}

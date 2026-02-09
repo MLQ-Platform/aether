@@ -23,7 +23,7 @@ class InMemoryDataProvider:
         data_dir: Optional[str] = "data",
     ):
 
-        module_dir = Path(__file__).resolve().parents[2]
+        module_dir = Path(__file__).resolve().parents[1]
         data_path = module_dir / data_dir
 
         self._data_dir = data_path

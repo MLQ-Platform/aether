@@ -110,7 +110,7 @@ async def generate_initial_factor_statement_async(
     statement: Statement,
     config: Config = None,
 ) -> FactorStatement:
-    initial_factor_agent = factory.get_async_initial_factor_agent(config)
+    initial_factor_agent = factory.get_initial_factor_agent(config, async_=True)
     initial_factor_statement = await initial_factor_agent.run_async(statement.statement)
     return initial_factor_statement
 
@@ -119,7 +119,7 @@ async def generate_proof_check_async(
     factor_statement: FactorStatement,
     config: Config = None,
 ) -> ProofRevision:
-    proof_check_agent = factory.get_async_proof_check_agent(config)
+    proof_check_agent = factory.get_proof_check_agent(config, async_=True)
     proof_revision = await proof_check_agent.run_async(factor_statement.proof)
     return proof_revision
 
@@ -129,7 +129,7 @@ async def generate_fixed_factor_statement_async(
     revision: ProofRevision,
     config: Config = None,
 ) -> FactorStatement:
-    proof_fix_agent = factory.get_async_proof_fix_agent(config)
+    proof_fix_agent = factory.get_proof_fix_agent(config, async_=True)
     fixed_factor_statement = await proof_fix_agent.run_async(
         initial_factor_statement.proof, revision
     )
@@ -140,6 +140,6 @@ async def generate_factor_code_async(
     factor_statement: FactorStatement,
     config: Config = None,
 ) -> FactorCode:
-    factor_code_agent = factory.get_async_factor_code_agent(config)
+    factor_code_agent = factory.get_factor_code_agent(config, async_=True)
     factor_code = await factor_code_agent.run_async(factor_statement.proof)
     return factor_code

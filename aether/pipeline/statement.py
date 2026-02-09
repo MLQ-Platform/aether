@@ -136,7 +136,7 @@ async def generate_statement_async(
     final_claims: List[Claim],
     config: Config = None,
 ) -> Statement:
-    statement_agent = factory.get_async_statement_agent(config)
+    statement_agent = factory.get_statement_agent(config, async_=True)
     statement = await statement_agent.run_async(final_claims)
     statement.uuid = generate_uuid()
     return statement

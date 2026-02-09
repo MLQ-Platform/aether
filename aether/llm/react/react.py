@@ -3,8 +3,8 @@ import atexit
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 from typing import Optional
-from aether.llm.agent.tools.adapter import ToolCallAdapter
-from aether.llm.agent.tools.base import Tool
+from aether.llm.react.tools.adapter import ToolCallAdapter
+from aether.llm.react.tools.base import Tool
 from aether.logger import get_logger
 from aether.utils import generate_task_id
 
