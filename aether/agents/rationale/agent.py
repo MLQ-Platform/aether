@@ -28,6 +28,7 @@ class RationaleAgent(Agent):
         client: Union[OpenAI, AsyncOpenAI],
         tools: List[Tool],
         system_promt_path: str = "statement-rationale.txt",
+        parse_retries: int = 3,
         **kwargs,
     ):
         super().__init__(model, client, system_promt_path)
@@ -37,7 +38,9 @@ class RationaleAgent(Agent):
         # code execution agent
         self.agent = ReactAgent(self.adapter, tools, **kwargs)
         # structured llm
-        self.structured_llm = StructuredLLM(model, client, schema=Rationale)
+        self.structured_llm = StructuredLLM(
+            model, client, schema=Rationale, max_retries=parse_retries
+        )
 
     async def run_async(
         self, claim: Claim, exec_context: dict = {}

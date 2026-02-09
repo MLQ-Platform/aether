@@ -2,6 +2,8 @@ from aether.config import Config
 from aether.config import get_config
 from aether.provider import InMemoryDataProvider
 
+_async_clients: list = []
+
 
 def get_provider():
     provider = InMemoryDataProvider()
@@ -42,7 +44,15 @@ def get_async_client(config: Config = None):
         timeout=config.llm.timeout,
         max_retries=config.llm.max_retries,
     )
+    _async_clients.append(client)
     return client
+
+
+async def cleanup_async_clients():
+    """Close all tracked AsyncOpenAI clients to prevent 'Event loop is closed' errors."""
+    for client in _async_clients:
+        await client.close()
+    _async_clients.clear()
 
 
 def get_thesis_agent(config: Config = None, *, async_: bool = False):
@@ -55,6 +65,7 @@ def get_thesis_agent(config: Config = None, *, async_: bool = False):
         model=config.llm.model,
         client=client,
         system_promt_path="thesis-revealing.txt",
+        max_retries=config.llm.parse_retries,
     )
     return thesis_agent
 
@@ -69,6 +80,7 @@ def get_claim_agent(config: Config = None, *, async_: bool = False):
         model=config.llm.model,
         client=client,
         system_promt_path="statement-claim.txt",
+        max_retries=config.llm.parse_retries,
     )
     return claim_agent
 
@@ -83,6 +95,7 @@ def get_statement_agent(config: Config = None, *, async_: bool = False):
         model=config.llm.model,
         client=client,
         system_promt_path="statement-final.txt",
+        max_retries=config.llm.parse_retries,
     )
     return statement_agent
 
@@ -100,6 +113,7 @@ def get_rationale_agent(config: Config = None):
         tools=tools,
         system_promt_path="statement-rationale.txt",
         max_iterations=config.agent.react_max_iterations,
+        parse_retries=config.llm.parse_retries,
     )
     return rationale_agent
 
@@ -114,6 +128,7 @@ def get_claim_modify_agent(config: Config = None):
         model=config.llm.model,
         client=client,
         system_promt_path="statement-claim-modify.txt",
+        max_retries=config.llm.parse_retries,
     )
     return claim_modify_agent
 
@@ -127,6 +142,7 @@ def get_initial_factor_agent(config: Config = None, *, async_: bool = False):
     initial_factor_agent = InitialFactorStatementAgent(
         model=config.llm.model,
         client=client,
+        max_retries=config.llm.parse_retries,
     )
     return initial_factor_agent
 
@@ -140,6 +156,7 @@ def get_proof_check_agent(config: Config = None, *, async_: bool = False):
     proof_check_agent = ProofCheckAgent(
         model=config.llm.model,
         client=client,
+        max_retries=config.llm.parse_retries,
     )
     return proof_check_agent
 
@@ -153,6 +170,7 @@ def get_proof_fix_agent(config: Config = None, *, async_: bool = False):
     proof_fix_agent = ProofFixAgent(
         model=config.llm.model,
         client=client,
+        max_retries=config.llm.parse_retries,
     )
     return proof_fix_agent
 
@@ -166,5 +184,6 @@ def get_factor_code_agent(config: Config = None, *, async_: bool = False):
     factor_code_agent = FactorCodeAgent(
         model=config.llm.model,
         client=client,
+        max_retries=config.llm.parse_retries,
     )
     return factor_code_agent

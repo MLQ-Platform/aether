@@ -41,6 +41,25 @@ def _cli_warn_sink(message):
     console.print(f" [dim]│[/dim]  [{style}]{marker} {record['message']}[/{style}]")
 
 
+def _cli_info_sink(message):
+    """CLI default sink: INFO updates the live display sub-text; WARNING suppressed; ERROR printed."""
+    from aether.display import get_active_display
+
+    record = message.record
+    level = record["level"].name
+    if level == "WARNING":
+        return
+    if level in ("ERROR", "CRITICAL"):
+        console.print(f" [dim]│[/dim]  [error]✖ {record['message']}[/error]")
+        return
+    # INFO: update the live display sub-text, or print as dim line if no display active
+    display = get_active_display()
+    if display is not None:
+        display.update(record["message"])
+    else:
+        console.print(f" [dim]│[/dim]  [dim]{record['message']}[/dim]")
+
+
 # Default: script mode (INFO level, standard format)
 logger.remove()
 _sink_id = logger.add(_script_sink, level="INFO", colorize=False)
@@ -54,7 +73,7 @@ def init_cli(verbose: bool = False):
     if verbose:
         _sink_id = logger.add(_cli_sink, level="DEBUG", colorize=False)
     else:
-        _sink_id = logger.add(_cli_warn_sink, level="WARNING", colorize=False)
+        _sink_id = logger.add(_cli_info_sink, level="INFO", colorize=False)
 
 
 def get_logger(name: str, level: str = "INFO"):

@@ -8,7 +8,7 @@ class FactorStatement(BaseModel):
     Factor Statement
     """
 
-    uuid: Optional[str] = None
+    uuid: Optional[int] = None
 
     conclusion: str = Field(
         description="The concrete final mathematical proposition established through the proof.",

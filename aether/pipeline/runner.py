@@ -156,12 +156,17 @@ async def run_thesis_parallel(
     semaphore = asyncio.Semaphore(config.pipeline.max_concurrent_requests)
 
     subgraphs = [generate_sub_clause(clause_graph) for _ in range(num_parallel)]
+    completed = 0
 
     async def gen_one(subgraph):
+        nonlocal completed
         async with semaphore:
-            return await generate_thesis_async(
+            result = await generate_thesis_async(
                 *subgraph.clause_trees.values(), config=config
             )
+            completed += 1
+            logger.info(f"Parallel thesis {completed}/{num_parallel} done")
+            return result
 
     theses = await asyncio.gather(*[gen_one(sg) for sg in subgraphs])
     os.makedirs(thesis_save_basedir, exist_ok=True)
@@ -213,24 +218,27 @@ async def run_claim_parallel(
 
     theses = load_all_theses(thesis_load_basedir)[:num_parallel]
     logger.info(f"Processing {len(theses)} theses in parallel")
+    completed = 0
 
     async def gen_one(thesis):
+        nonlocal completed
         async with semaphore:
-            return thesis, await generate_claims_async(thesis, config=config)
+            result = thesis, await generate_claims_async(thesis, config=config)
+            completed += 1
+            logger.info(f"Parallel claim {completed}/{len(theses)} done")
+            return result
 
     results = await asyncio.gather(*[gen_one(t) for t in theses])
 
     os.makedirs(claim_save_basedir, exist_ok=True)
-    all_claims = []
 
     for thesis, claims in results:
         claims_dict = {c.uuid: c.model_dump() for c in claims}
         savepath = os.path.join(claim_save_basedir, f"claim-{thesis.uuid}.json")
         save_json(claims_dict, savepath)
         logger.info(f"Claims saved: {savepath}")
-        all_claims.extend(claims)
 
-    return all_claims
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -290,23 +298,35 @@ async def _process_one_statement(
     semaphore: asyncio.Semaphore,
     statement_save_basedir: str,
     config=None,
+    counter: list = None,
+    total: int = 0,
 ):
-    final_claims, instances, edges = await verify_claims_loop(
-        claims, provider=provider, semaphore=semaphore, config=config
-    )
+    try:
+        final_claims, instances, edges = await verify_claims_loop(
+            claims, provider=provider, semaphore=semaphore, config=config
+        )
 
-    instances = list(claims) + instances
-    statement = generate_statement(final_claims, config=config)
-    logger.info("Statement generated")
-    instances.append(statement)
+        instances = list(claims) + instances
+        statement = generate_statement(final_claims, config=config)
+        if counter is not None:
+            counter[0] += 1
+            logger.info(f"Parallel statement {counter[0]}/{total} done")
+        else:
+            logger.info("Statement generated")
+        instances.append(statement)
 
-    statement_graph = generate_statement_graph(instances, edges)
+        statement_graph = generate_statement_graph(instances, edges)
 
-    savepath = os.path.join(statement_save_basedir, f"statement-{statement.uuid}.json")
-    save_json(statement_graph.to_dict(), savepath)
-    logger.info(f"Statement graph saved to {savepath}")
+        savepath = os.path.join(
+            statement_save_basedir, f"statement-{statement.uuid}.json"
+        )
+        save_json(statement_graph.to_dict(), savepath)
+        logger.info(f"Statement graph saved to {savepath}")
 
-    return statement_graph
+        return statement_graph
+    except Exception as e:
+        logger.error(f"Statement processing failed: {type(e).__name__}: {e}")
+        raise
 
 
 async def run_statement_parallel(
@@ -324,6 +344,7 @@ async def run_statement_parallel(
 
     claim_sets = load_all_claim_sets(claim_load_basedir)[:num_parallel]
     logger.info(f"Processing {len(claim_sets)} claim sets in parallel")
+    counter = [0]
 
     os.makedirs(statement_save_basedir, exist_ok=True)
 
@@ -331,7 +352,13 @@ async def run_statement_parallel(
         results = await asyncio.gather(
             *[
                 _process_one_statement(
-                    claims, provider, semaphore, statement_save_basedir, config=config
+                    claims,
+                    provider,
+                    semaphore,
+                    statement_save_basedir,
+                    config=config,
+                    counter=counter,
+                    total=len(claim_sets),
                 )
                 for claims in claim_sets
             ]
@@ -381,10 +408,15 @@ async def run_factor_parallel(
 
     statements = load_all_statements(statement_load_basedir)[:num_parallel]
     logger.info(f"Processing {len(statements)} statements in parallel")
+    completed = 0
 
     async def gen_one(statement):
+        nonlocal completed
         async with semaphore:
-            return await run_factor_revision_async(statement, config=config)
+            result = await run_factor_revision_async(statement, config=config)
+            completed += 1
+            logger.info(f"Parallel factor {completed}/{len(statements)} done")
+            return result
 
     results = await asyncio.gather(*[gen_one(s) for s in statements])
 

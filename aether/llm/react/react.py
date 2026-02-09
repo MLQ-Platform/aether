@@ -53,9 +53,7 @@ class ReactAgent:
 
         # ReAct Loop
         for iteration in range(self.max_iterations):
-            logger.debug(
-                f"[Task {task_id}] Iteration {iteration + 1}/{self.max_iterations}"
-            )
+            logger.info(f"ReAct iteration {iteration + 1}/{self.max_iterations}")
 
             # 1. LLM Tool Calling 호출
             response = self.adapter.call_with_tools(
@@ -77,7 +75,7 @@ class ReactAgent:
             logger.debug(
                 f"[Task {task_id}] Reasoning: {reasoning}",
             )
-            logger.debug(f"[Task {task_id}] Executing {len(tool_calls)} tools")
+            logger.info(f"Executing {len(tool_calls)} tool(s)")
 
             for tool_call in tool_calls:
                 tool_name = tool_call["name"]
@@ -86,7 +84,7 @@ class ReactAgent:
                 try:
                     tool = self.tools[tool_name]
                     result = str(tool.func(**tool_args))
-                    logger.debug(f"[Task {task_id}] Tool {tool_name} completed")
+                    logger.info(f"Tool {tool_name} completed")
 
                 except Exception as e:
                     result = f"Error executing tool {tool_name}: {str(e)}"
@@ -148,9 +146,7 @@ class ReactAgent:
 
         # ReAct Loop
         for iteration in range(self.max_iterations):
-            logger.debug(
-                f"[Task {task_id}] Iteration {iteration + 1}/{self.max_iterations}"
-            )
+            logger.info(f"ReAct iteration {iteration + 1}/{self.max_iterations}")
 
             # 1. LLM Tool Calling 호출 (async)
             response = await self.adapter.call_with_tools(
@@ -173,7 +169,7 @@ class ReactAgent:
             logger.debug(
                 f"[Task {task_id}] Reasoning: {reasoning}",
             )
-            logger.debug(f"[Task {task_id}] Executing {len(tool_calls)} tools")
+            logger.info(f"Executing {len(tool_calls)} tool(s)")
 
             for tool_call in tool_calls:
                 tool_name = tool_call["name"]
@@ -195,7 +191,7 @@ class ReactAgent:
 
                     result, exec_context = tool_result
                     result = str(result)
-                    logger.debug(f"[Task {task_id}] Tool {tool_name} completed")
+                    logger.info(f"Tool {tool_name} completed")
 
                 except asyncio.TimeoutError:
                     result = f"Error: Tool '{tool_name}' execution exceeded {TOOL_TIMEOUT} seconds timeout."

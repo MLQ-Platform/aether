@@ -8,6 +8,9 @@ from pydantic import BaseModel
 from pydantic import ValidationError
 from aether.exceptions import LLMParseError
 from aether.llm.types import Messages
+from aether.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class StructuredLLM:
@@ -94,6 +97,10 @@ class StructuredLLM:
 
         for attempt in range(self.max_retries):
             try:
+                logger.info(
+                    f"Structured parse {self.schema.__name__} attempt {attempt + 1}/{self.max_retries}"
+                )
+
                 # response_format은 선택적으로 사용 (일부 모델은 지원 안 함)
                 create_params = {
                     "model": self.model,
@@ -110,6 +117,7 @@ class StructuredLLM:
                 return self.schema(**data)
 
             except (json.JSONDecodeError, ValidationError) as e:
+                logger.info(f"Parse failed ({type(e).__name__}), retrying...")
                 if attempt < self.max_retries - 1:
                     # Reset to initial messages instead of accumulating failed attempts
                     full_messages = self._prepare_messages(messages, json_instruction)
@@ -158,6 +166,10 @@ class StructuredLLM:
 
         for attempt in range(self.max_retries):
             try:
+                logger.info(
+                    f"Structured parse {self.schema.__name__} attempt {attempt + 1}/{self.max_retries}"
+                )
+
                 # response_format은 선택적으로 사용 (일부 모델은 지원 안 함)
                 create_params = {
                     "model": self.model,
@@ -174,6 +186,7 @@ class StructuredLLM:
                 return self.schema(**data)
 
             except (json.JSONDecodeError, ValidationError) as e:
+                logger.info(f"Parse failed ({type(e).__name__}), retrying...")
                 if attempt < self.max_retries - 1:
                     # Reset to initial messages instead of accumulating failed attempts
                     full_messages = self._prepare_messages(messages, json_instruction)

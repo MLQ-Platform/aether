@@ -1,0 +1,38 @@
+{
+  "3910604554": {
+    "uuid": 3910604554,
+    "claim": "During low-volatility consolidation regimes, the rate of change of normalized volume exhibits negative skewness.",
+    "condition": "skew(roc(VOLUME / rolling_mean(VOLUME, 50), 1), window=20) < 0",
+    "data_columns": [
+      "VOLUME"
+    ],
+    "verification_plan": "Identify low-volatility consolidation periods using a rolling standard deviation of CLOSE returns (e.g., 20-period). Within these periods, compute the 1-period rate of change of volume normalized by its 50-period rolling mean. Test the skewness of this ROC series over a 20-period window. Use a one-sample t-test against a null hypothesis of zero skewness. Report the mean skewness and its statistical significance (p-value)."
+  },
+  "1682248780": {
+    "uuid": 1682248780,
+    "claim": "During low-volatility consolidation regimes, the occurrence of a new 20-period low in the rate of change of normalized volume is followed by a significant positive shift in the 5-period shifted rolling maximum of volume within the next 5 periods.",
+    "condition": "mean(shift(rolling_max(VOLUME, 5), -5)[event_day+1:event_day+5]) > mean(shift(rolling_max(VOLUME, 5), -5)[event_day-10:event_day-1]) + 2 * std(shift(rolling_max(VOLUME, 5), -5)[event_day-10:event_day-1])",
+    "data_columns": [
+      "VOLUME"
+    ],
+    "verification_plan": "Within identified low-volatility periods, flag days where the ROC of normalized volume hits a new 20-period low. For each event, calculate the mean of the 5-period shifted rolling max of volume in the 5 days following the event. Compare this to the mean of the same metric in the 10 days preceding the event. Use a paired t-test to determine if the post-event mean is significantly greater. Report the mean difference and effect size (Cohen's d)."
+  },
+  "397445701": {
+    "uuid": 397445701,
+    "claim": "The time lag between a new low in the rate of change of normalized volume and the subsequent peak in the shifted rolling maximum of volume is less than 10 periods for a majority of occurrences in low-volatility regimes.",
+    "condition": "percentile(time_lag_between(event_roc_low, peak_shifted_max_vol), 50) < 10",
+    "data_columns": [
+      "VOLUME"
+    ],
+    "verification_plan": "For each event (new ROC low), find the subsequent local maximum in the 5-period shifted rolling max of volume within a 20-period forward window. Calculate the lag in periods. Compute the median and 75th percentile of these lags across all events in low-volatility regimes. Test if the median lag is significantly less than 10 using a one-sample Wilcoxon signed-rank test."
+  },
+  "3467057704": {
+    "uuid": 3467057704,
+    "claim": "The magnitude of the volume spike following a new low in the rate of change of normalized volume, measured by the peak shifted rolling maximum, is positively correlated with the depth of the preceding ROC low during low-volatility regimes.",
+    "condition": "correlation(depth_of_roc_low, magnitude_of_subsequent_volume_peak) > 0.3",
+    "data_columns": [
+      "VOLUME"
+    ],
+    "verification_plan": "For each event, quantify the 'depth' as the z-score of the ROC value relative to its preceding 20-period distribution. Quantify the subsequent 'volume peak' as the maximum value of the shifted rolling max in the following 10 periods, normalized by the pre-event median. Calculate the Pearson correlation coefficient between these two series. Test its significance against a null of zero correlation using a permutation test. Report the correlation coefficient and p-value."
+  }
+}

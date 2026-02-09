@@ -1,0 +1,33 @@
+{
+  "574418422": {
+    "uuid": 574418422,
+    "claim": "During periods of high buying pressure volatility, there is a positive cross-correlation at a 5-period lag between the occurrence of new lows in 10-period lagged, 20-period standardized taker buy volume and new highs in exponentially-scaled percentage changes of taker buy volume with a 0.1 alpha.",
+    "condition": "correlation( indicator_new_low( standardize( lag(TAKER_BUY_VOLUME, 10), 20 ), 20 ), shift( indicator_new_high( exponential_moving_average( percentage_change(TAKER_BUY_VOLUME), 0.1 ), 10 ), 5 ) ) > 0 for data where std(ORDER_FLOW_IMBALANCE, 20) > percentile(std(ORDER_FLOW_IMBALANCE, 20), 70)",
+    "data_columns": [
+      "TAKER_BUY_VOLUME",
+      "ORDER_FLOW_IMBALANCE"
+    ],
+    "verification_plan": "Compute the Pearson correlation coefficient between the two binary indicator series for the filtered subset. Use a permutation test to assess significance by shuffling the B series and comparing the observed correlation to the null distribution. Report the effect size as the correlation coefficient."
+  },
+  "2685987822": {
+    "uuid": 2685987822,
+    "claim": "The probability of observing a new high in exponentially-scaled percentage changes of taker buy volume 5 periods after a new low in lagged, standardized taker buy volume is higher during high buying pressure volatility periods compared to the baseline probability in those periods.",
+    "condition": "P( indicator_new_high( exponential_moving_average( percentage_change(TAKER_BUY_VOLUME), 0.1 ), 10 ) at t+5 = 1 | indicator_new_low( standardize( lag(TAKER_BUY_VOLUME, 10), 20 ), 20 ) at t = 1, std(ORDER_FLOW_IMBALANCE, 20) > percentile(std(ORDER_FLOW_IMBALANCE, 20), 70) ) > P( indicator_new_high( exponential_moving_average( percentage_change(TAKER_BUY_VOLUME), 0.1 ), 10 ) at t+5 = 1 | std(ORDER_FLOW_IMBALANCE, 20) > percentile(std(ORDER_FLOW_IMBALANCE, 20), 70) )",
+    "data_columns": [
+      "TAKER_BUY_VOLUME",
+      "ORDER_FLOW_IMBALANCE"
+    ],
+    "verification_plan": "Calculate the conditional probabilities from the data. Use a two-proportion z-test to compare P(B|A,C) and P(B|C). Compute the difference in proportions and its confidence interval to measure effect size."
+  },
+  "4252560788": {
+    "uuid": 4252560788,
+    "claim": "The joint occurrence of a new low in lagged, standardized taker buy volume followed by a new high in exponentially-scaled percentage changes during high buying pressure volatility predicts a positive 10-period return in the closing price.",
+    "condition": "mean( (CLOSE(t+10) - CLOSE(t)) / CLOSE(t) | indicator_new_low( standardize( lag(TAKER_BUY_VOLUME, 10), 20 ), 20 ) at t = 1, indicator_new_high( exponential_moving_average( percentage_change(TAKER_BUY_VOLUME), 0.1 ), 10 ) at t+5 = 1, std(ORDER_FLOW_IMBALANCE, 20) > percentile(std(ORDER_FLOW_IMBALANCE, 20), 70) ) > 0",
+    "data_columns": [
+      "TAKER_BUY_VOLUME",
+      "ORDER_FLOW_IMBALANCE",
+      "CLOSE"
+    ],
+    "verification_plan": "Compute the average percentage return over the next 10 periods following the event. Test if the mean return is significantly greater than zero using a one-sample t-test. Use bootstrapping to estimate confidence intervals and assess robustness."
+  }
+}

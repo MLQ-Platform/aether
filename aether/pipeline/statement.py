@@ -39,7 +39,9 @@ async def verify_claims_loop(
     final_claims = []
 
     for i in range(config.pipeline.total_iterations):
-        logger.info(f"Verification round {i + 1}/{config.pipeline.total_iterations}")
+        logger.info(
+            f"Verification round {i + 1}/{config.pipeline.total_iterations} ({len(claims)} claims)"
+        )
 
         rationales = await generate_rationales_async(
             claims, provider=provider, semaphore=semaphore, config=config
@@ -57,7 +59,7 @@ async def verify_claims_loop(
         final_claims.extend(accepted_claims)
 
         logger.info(
-            f"Rejected: {len(rejected_rationales)}, Accepted: {len(accepted_claims)}"
+            f"Accepted {len(accepted_claims)}/{len(claims)}, rejected {len(rejected_rationales)}"
         )
 
         instances.extend(rationales)
@@ -67,6 +69,7 @@ async def verify_claims_loop(
             logger.info("All claims accepted")
             break
 
+        logger.info(f"Modifying {len(rejected_claims)} rejected claims")
         modified_claims = await generate_rationales_modify_async(
             rejected_claims, rejected_rationales, semaphore=semaphore, config=config
         )
@@ -90,12 +93,17 @@ async def generate_rationales_async(
     config = config or get_config()
     rationale_agent = factory.get_rationale_agent(config)
     exec_context = {"df": provider.get(config.data.ticker)}
+    completed = 0
 
     async def limited(claim):
+        nonlocal completed
         async with semaphore:
-            return await rationale_agent.run_async(
+            result = await rationale_agent.run_async(
                 claim, exec_context=exec_context.copy()
             )
+            completed += 1
+            logger.info(f"Claim verified {completed}/{len(claims)}")
+            return result
 
     tasks = [limited(claim) for claim in claims]
     rationales = await asyncio.gather(*tasks, return_exceptions=True)

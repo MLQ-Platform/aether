@@ -23,6 +23,7 @@ class LLMConfig:
     api_key: Optional[str] = None
     timeout: float = 120.0
     max_retries: int = 3
+    parse_retries: int = 5
 
 
 @dataclass

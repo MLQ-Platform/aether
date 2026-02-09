@@ -23,18 +23,22 @@ def run_factor_revision(
     """
     config = config or get_config()
 
+    logger.info("Generating initial proof")
     factor_statement = generate_initial_factor_statement(statement, config=config)
 
     for i in range(config.pipeline.revision_iterations):
+        logger.info(f"Proof check {i + 1}/{config.pipeline.revision_iterations}")
         revision = generate_proof_check(factor_statement, config=config)
         if revision.is_pass:
             logger.info(f"Proof passed at revision {i + 1}")
             break
+        logger.info(f"Proof failed, applying fix {i + 1}")
         factor_statement = generate_fixed_factor_statement(
             factor_statement, revision, config=config
         )
 
     factor_statement.uuid = generate_uuid()
+    logger.info("Generating factor code")
     factor_code = generate_factor_code(factor_statement, config=config)
     return factor_statement, factor_code
 
@@ -88,20 +92,24 @@ async def run_factor_revision_async(
     """Async version of run_factor_revision."""
     config = config or get_config()
 
+    logger.info("Generating initial proof")
     factor_statement = await generate_initial_factor_statement_async(
         statement, config=config
     )
 
     for i in range(config.pipeline.revision_iterations):
+        logger.info(f"Proof check {i + 1}/{config.pipeline.revision_iterations}")
         revision = await generate_proof_check_async(factor_statement, config=config)
         if revision.is_pass:
             logger.info(f"Proof passed at revision {i + 1}")
             break
+        logger.info(f"Proof failed, applying fix {i + 1}")
         factor_statement = await generate_fixed_factor_statement_async(
             factor_statement, revision, config=config
         )
 
     factor_statement.uuid = generate_uuid()
+    logger.info("Generating factor code")
     factor_code = await generate_factor_code_async(factor_statement, config=config)
     return factor_statement, factor_code
 
