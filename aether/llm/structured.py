@@ -6,6 +6,7 @@ from openai import AsyncOpenAI
 from openai import OpenAI
 from pydantic import BaseModel
 from pydantic import ValidationError
+from aether.exceptions import LLMParseError
 from aether.llm.types import Messages
 
 
@@ -119,11 +120,11 @@ class StructuredLLM:
                         f"Please ensure you output ONLY valid JSON matching the schema above.]"
                     )
                 else:
-                    raise ValueError(
+                    raise LLMParseError(
                         f"Failed to generate valid structured output after {self.max_retries} attempts.\n"
                         f"Last error: {e}\n"
                         f"Last response: {content[:200]}..."
-                    )
+                    ) from e
 
         raise RuntimeError("Unexpected error in invoke")
 
@@ -182,11 +183,11 @@ class StructuredLLM:
                         f"Please ensure you output ONLY valid JSON matching the schema above.]"
                     )
                 else:
-                    raise ValueError(
+                    raise LLMParseError(
                         f"Failed to generate valid structured output after {self.max_retries} attempts.\n"
                         f"Last error: {e}\n"
                         f"Last response: {content[:200]}..."
-                    )
+                    ) from e
 
         raise RuntimeError("Unexpected error in invoke_async")
 

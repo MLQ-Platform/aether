@@ -4,6 +4,7 @@ from aether.agents.thesis.schema import Thesis
 from aether.clause.tree.base import ClauseTree
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.exceptions import AgentExecutionError
 from aether.logger import get_logger
 
 logger = get_logger(__name__)
@@ -51,8 +52,7 @@ class ThesisRevealingAgent(Agent):
             logger.info(f"Thesis generated ({len(result.thesis)} chars)")
 
         except Exception as e:
-            logger.error(f"Thesis generation failed: {e}")
-            return None
+            raise AgentExecutionError("Thesis generation failed") from e
 
         return result
 
@@ -78,8 +78,7 @@ class ThesisRevealingAgent(Agent):
             )
             logger.info(f"Thesis generated ({len(result.thesis)} chars)")
         except Exception as e:
-            logger.error(f"Thesis generation failed: {e}")
-            return None
+            raise AgentExecutionError("Thesis generation failed") from e
 
         return result
 

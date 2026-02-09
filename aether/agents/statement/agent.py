@@ -5,6 +5,7 @@ from aether.agents.claim.schema import Claim
 from aether.agents.statement.schema import Statement
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.exceptions import AgentExecutionError
 from aether.logger import get_logger
 
 logger = get_logger(__name__)
@@ -52,8 +53,7 @@ class StatementAgent(Agent):
             logger.info(f"Statement generated ({len(result.statement)} chars)")
 
         except Exception as e:
-            logger.error(f"Statement generation failed: {e}")
-            return None
+            raise AgentExecutionError("Statement generation failed") from e
 
         return result
 
@@ -79,8 +79,7 @@ class StatementAgent(Agent):
             )
             logger.info(f"Statement generated ({len(result.statement)} chars)")
         except Exception as e:
-            logger.error(f"Statement generation failed: {e}")
-            return None
+            raise AgentExecutionError("Statement generation failed") from e
 
         return result
 

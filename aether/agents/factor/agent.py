@@ -6,6 +6,7 @@ from aether.agents.factor.schema import ProofRevision
 from aether.config import DataSchema
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.exceptions import AgentExecutionError
 from aether.logger import get_logger
 
 logger = get_logger(__name__)
@@ -51,8 +52,7 @@ class InitialFactorStatementAgent(Agent):
             logger.info("Initial factor statement generated")
 
         except Exception as e:
-            logger.error(f"Initial factor generation failed: {e}")
-            return None
+            raise AgentExecutionError("Initial factor generation failed") from e
 
         return result
 
@@ -78,8 +78,7 @@ class InitialFactorStatementAgent(Agent):
             )
             logger.info("Initial factor statement generated")
         except Exception as e:
-            logger.error(f"Initial factor generation failed: {e}")
-            return None
+            raise AgentExecutionError("Initial factor generation failed") from e
 
         return result
 
@@ -130,8 +129,7 @@ class ProofCheckAgent(Agent):
             logger.info("Proof check completed")
 
         except Exception as e:
-            logger.error(f"Proof check failed: {e}")
-            return None
+            raise AgentExecutionError("Proof check failed") from e
 
         return result
 
@@ -157,8 +155,7 @@ class ProofCheckAgent(Agent):
             )
             logger.info("Proof check completed")
         except Exception as e:
-            logger.error(f"Proof check failed: {e}")
-            return None
+            raise AgentExecutionError("Proof check failed") from e
 
         return result
 
@@ -209,8 +206,7 @@ class ProofFixAgent(Agent):
             logger.info("Proof fix applied")
 
         except Exception as e:
-            logger.error(f"Proof fix failed: {e}")
-            return None
+            raise AgentExecutionError("Proof fix failed") from e
 
         return result
 
@@ -236,8 +232,7 @@ class ProofFixAgent(Agent):
             )
             logger.info("Proof fix applied")
         except Exception as e:
-            logger.error(f"Proof fix failed: {e}")
-            return None
+            raise AgentExecutionError("Proof fix failed") from e
 
         return result
 
@@ -297,8 +292,7 @@ class FactorCodeAgent(Agent):
             logger.info("Factor code generated")
 
         except Exception as e:
-            logger.error(f"Factor code generation failed: {e}")
-            return None
+            raise AgentExecutionError("Factor code generation failed") from e
 
         return result
 
@@ -330,8 +324,7 @@ class FactorCodeAgent(Agent):
             )
             logger.info("Factor code generated")
         except Exception as e:
-            logger.error(f"Factor code generation failed: {e}")
-            return None
+            raise AgentExecutionError("Factor code generation failed") from e
 
         return result
 

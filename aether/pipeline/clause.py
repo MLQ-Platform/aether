@@ -8,6 +8,7 @@ from aether.clause.tree.base import ClauseTree
 from aether.clause.tree.generator import ClauseGenerator
 from aether.config import Config
 from aether.config import get_config
+from aether.exceptions import DataError
 from aether.logger import get_logger
 from aether.utils import generate_uuid
 
@@ -67,7 +68,10 @@ def generate_sub_clause(clause_graph: ClauseGraph) -> ClauseGraph:
 
 def load_clause_graph(basedir: str, version: str = "v0") -> ClauseGraph:
     filepath = os.path.join(basedir, f"clause-{version}.json")
-    clause_graph = ClauseGraph.load(filepath)
+    try:
+        clause_graph = ClauseGraph.load(filepath)
+    except FileNotFoundError as e:
+        raise DataError(f"Clause graph not found: {filepath}") from e
     return clause_graph
 
 

@@ -5,6 +5,7 @@ from aether.agents.claim.schema import ClaimList
 from aether.config import DataSchema
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.exceptions import AgentExecutionError
 from aether.logger import get_logger
 
 logger = get_logger(__name__)
@@ -56,8 +57,7 @@ class ClaimDecompositionAgent(Agent):
             logger.info(f"Claims decomposed ({len(result.claims)} claims)")
 
         except Exception as e:
-            logger.error(f"Claim decomposition failed: {e}")
-            return None
+            raise AgentExecutionError("Claim decomposition failed") from e
 
         return result
 
@@ -89,8 +89,7 @@ class ClaimDecompositionAgent(Agent):
             )
             logger.info(f"Claims decomposed ({len(result.claims)} claims)")
         except Exception as e:
-            logger.error(f"Claim decomposition failed: {e}")
-            return None
+            raise AgentExecutionError("Claim decomposition failed") from e
 
         return result
 
@@ -141,8 +140,7 @@ class ClaimModifyAgent(Agent):
             logger.info("Claim modified")
 
         except Exception as e:
-            logger.error(f"Claim modification failed: {e}")
-            return None
+            raise AgentExecutionError("Claim modification failed") from e
 
         return result
 

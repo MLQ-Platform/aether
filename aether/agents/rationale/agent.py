@@ -11,6 +11,7 @@ from aether.llm.agent import ReactAgent
 from aether.llm.agent import Tool
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
+from aether.exceptions import AgentExecutionError
 from aether.logger import get_logger
 
 logger = get_logger(__name__)
@@ -66,8 +67,7 @@ class RationaleAgent(Agent):
             logger.info(f"Rationale generated ({len(result.rationale)} chars)")
 
         except Exception as e:
-            logger.error(f"Rationale generation failed: {e}")
-            return None
+            raise AgentExecutionError("Rationale generation failed") from e
 
         return result
 
