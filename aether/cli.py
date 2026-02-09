@@ -83,6 +83,7 @@ def thesis(
         None, "--config", "-c", help="Config YAML path"
     ),
     parallel: int = typer.Option(1, "--parallel", "-p", help="Number of parallel runs"),
+    iter_count: int = typer.Option(1, "--iter", "-n", help="Number of iterations"),
 ):
     """Generate a thesis from a ClauseGraph subgraph."""
     try:
@@ -92,23 +93,25 @@ def thesis(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        if parallel > 1:
-            with step_progress(f"Generating {parallel} Theses (parallel)"):
-                asyncio.run(
-                    run_thesis_parallel(
+        for i in range(iter_count):
+            label = f" (iter {i + 1}/{iter_count})" if iter_count > 1 else ""
+            if parallel > 1:
+                with step_progress(f"Generating {parallel} Theses (parallel){label}"):
+                    asyncio.run(
+                        run_thesis_parallel(
+                            clause_load_basedir=clause_dir,
+                            thesis_save_basedir=output_dir,
+                            clause_version=clause_version,
+                            num_parallel=parallel,
+                        )
+                    )
+            else:
+                with step_progress(f"Generating Thesis{label}"):
+                    run_thesis(
                         clause_load_basedir=clause_dir,
                         thesis_save_basedir=output_dir,
                         clause_version=clause_version,
-                        num_parallel=parallel,
                     )
-                )
-        else:
-            with step_progress("Generating Thesis"):
-                run_thesis(
-                    clause_load_basedir=clause_dir,
-                    thesis_save_basedir=output_dir,
-                    clause_version=clause_version,
-                )
         show_closer("Done")
     except Exception as e:
         show_error_block("Thesis Generation Failed", str(e))
@@ -127,6 +130,7 @@ def claim(
         None, "--config", "-c", help="Config YAML path"
     ),
     parallel: int = typer.Option(1, "--parallel", "-p", help="Number of parallel runs"),
+    iter_count: int = typer.Option(1, "--iter", "-n", help="Number of iterations"),
 ):
     """Decompose a thesis into verifiable claims."""
     try:
@@ -136,18 +140,23 @@ def claim(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        if parallel > 1:
-            with step_progress(f"Decomposing Claims ({parallel} parallel)"):
-                asyncio.run(
-                    run_claim_parallel(
+        for i in range(iter_count):
+            label = f" (iter {i + 1}/{iter_count})" if iter_count > 1 else ""
+            if parallel > 1:
+                with step_progress(f"Decomposing Claims ({parallel} parallel){label}"):
+                    asyncio.run(
+                        run_claim_parallel(
+                            thesis_load_basedir=thesis_dir,
+                            claim_save_basedir=output_dir,
+                            num_parallel=parallel,
+                        )
+                    )
+            else:
+                with step_progress(f"Decomposing Claims{label}"):
+                    run_claim(
                         thesis_load_basedir=thesis_dir,
                         claim_save_basedir=output_dir,
-                        num_parallel=parallel,
                     )
-                )
-        else:
-            with step_progress("Decomposing Claims"):
-                run_claim(thesis_load_basedir=thesis_dir, claim_save_basedir=output_dir)
         show_closer("Done")
     except Exception as e:
         show_error_block("Claim Decomposition Failed", str(e))
@@ -166,6 +175,7 @@ def statement(
         None, "--config", "-c", help="Config YAML path"
     ),
     parallel: int = typer.Option(1, "--parallel", "-p", help="Number of parallel runs"),
+    iter_count: int = typer.Option(1, "--iter", "-n", help="Number of iterations"),
 ):
     """Verify claims and synthesize a statement."""
     try:
@@ -175,25 +185,27 @@ def statement(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        if parallel > 1:
-            with step_progress(
-                f"Verifying & Synthesizing Statement ({parallel} parallel)"
-            ):
-                asyncio.run(
-                    run_statement_parallel(
-                        claim_load_basedir=claim_dir,
-                        statement_save_basedir=output_dir,
-                        num_parallel=parallel,
+        for i in range(iter_count):
+            label = f" (iter {i + 1}/{iter_count})" if iter_count > 1 else ""
+            if parallel > 1:
+                with step_progress(
+                    f"Verifying & Synthesizing Statement ({parallel} parallel){label}"
+                ):
+                    asyncio.run(
+                        run_statement_parallel(
+                            claim_load_basedir=claim_dir,
+                            statement_save_basedir=output_dir,
+                            num_parallel=parallel,
+                        )
                     )
-                )
-        else:
-            with step_progress("Verifying & Synthesizing Statement"):
-                asyncio.run(
-                    run_statement(
-                        claim_load_basedir=claim_dir,
-                        statement_save_basedir=output_dir,
+            else:
+                with step_progress(f"Verifying & Synthesizing Statement{label}"):
+                    asyncio.run(
+                        run_statement(
+                            claim_load_basedir=claim_dir,
+                            statement_save_basedir=output_dir,
+                        )
                     )
-                )
         show_closer("Done")
     except Exception as e:
         show_error_block("Statement Generation Failed", str(e))
@@ -212,6 +224,7 @@ def factor(
         None, "--config", "-c", help="Config YAML path"
     ),
     parallel: int = typer.Option(1, "--parallel", "-p", help="Number of parallel runs"),
+    iter_count: int = typer.Option(1, "--iter", "-n", help="Number of iterations"),
 ):
     """Generate factor code from a statement."""
     try:
@@ -221,21 +234,23 @@ def factor(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        if parallel > 1:
-            with step_progress(f"Generating Factor ({parallel} parallel)"):
-                asyncio.run(
-                    run_factor_parallel(
+        for i in range(iter_count):
+            label = f" (iter {i + 1}/{iter_count})" if iter_count > 1 else ""
+            if parallel > 1:
+                with step_progress(f"Generating Factor ({parallel} parallel){label}"):
+                    asyncio.run(
+                        run_factor_parallel(
+                            statement_load_basedir=statement_dir,
+                            factor_save_basedir=output_dir,
+                            num_parallel=parallel,
+                        )
+                    )
+            else:
+                with step_progress(f"Generating Factor{label}"):
+                    run_factor(
                         statement_load_basedir=statement_dir,
                         factor_save_basedir=output_dir,
-                        num_parallel=parallel,
                     )
-                )
-        else:
-            with step_progress("Generating Factor"):
-                run_factor(
-                    statement_load_basedir=statement_dir,
-                    factor_save_basedir=output_dir,
-                )
         show_closer("Done")
     except Exception as e:
         show_error_block("Factor Generation Failed", str(e))
