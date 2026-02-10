@@ -23,10 +23,14 @@ class ReactAgent:
         adapter: ToolCallAdapter,
         tools: list[Tool],
         max_iterations: int = 10,
+        max_workers: int = 5,
+        tool_timeout: int = 180,
     ):
         self.adapter = adapter
         self.tools = {tool.name: tool for tool in tools}
         self.max_iterations = max_iterations
+        self.max_workers = max_workers
+        self.tool_timeout = tool_timeout
 
         # Tool을 API 형식으로 변환
         self.api_tools = adapter.convert_tools_to_api_format(tools)
@@ -75,23 +79,21 @@ class ReactAgent:
             )
             logger.info(f"Executing {len(tool_calls)} tool(s)")
 
-            for tool_call in tool_calls:
-                tool_name = tool_call["name"]
-                tool_args = tool_call["arguments"]
+            tool_call = tool_calls[0]
+            tool_name = tool_call["name"]
+            tool_args = tool_call["arguments"]
 
-                try:
-                    tool = self.tools[tool_name]
-                    result = str(tool.func(**tool_args))
-                    logger.info(f"Tool {tool_name} completed")
+            try:
+                tool = self.tools[tool_name]
+                result = str(tool.func(**tool_args))
+                logger.info(f"Tool {tool_name} completed")
 
-                except Exception as e:
-                    result = f"Error executing tool {tool_name}: {str(e)}"
-                    logger.warning(
-                        f"[Task {task_id}] Tool {tool_name} failed: {str(e)}"
-                    )
+            except Exception as e:
+                result = f"Error executing tool {tool_name}: {str(e)}"
+                logger.warning(f"[Task {task_id}] Tool {tool_name} failed: {str(e)}")
 
-                # 결과를 메시지에 추가 (reasoning 포함)
-                self.adapter.format_tool_result(tool_call, result, messages, reasoning)
+            # 결과를 메시지에 추가 (reasoning 포함)
+            self.adapter.format_tool_result(tool_call, result, messages, reasoning)
 
         # 최종 답변 요청 메시지 추가
         messages.append(
@@ -117,16 +119,16 @@ class ReactAgent:
         self,
         query: str,
         system_prompt: str | None = None,
-        exec_context: dict | None = {},
+        exec_context: dict | None = None,
         task_id: str | None = None,
         **kwargs,
     ) -> str:
         """
         Async Agent 실행
         """
-        TOOL_TIMEOUT = 180
-
         task_id = task_id or generate_task_id()
+        if exec_context is None:
+            exec_context = {}
 
         # 메시지 초기화
         messages = []
@@ -136,7 +138,9 @@ class ReactAgent:
 
         # Use shared ThreadPoolExecutor (lazy initialization)
         if ReactAgent._shared_executor is None:
-            ReactAgent._shared_executor = ThreadPoolExecutor(max_workers=1)
+            ReactAgent._shared_executor = ThreadPoolExecutor(
+                max_workers=self.max_workers
+            )
             ReactAgent._ensure_shutdown_registered()
 
         executor = ReactAgent._shared_executor
@@ -169,41 +173,39 @@ class ReactAgent:
             )
             logger.info(f"Executing {len(tool_calls)} tool(s)")
 
-            for tool_call in tool_calls:
-                tool_name = tool_call["name"]
-                tool_args = tool_call["arguments"]
+            tool_call = tool_calls[0]
+            tool_name = tool_call["name"]
+            tool_args = tool_call["arguments"]
 
-                try:
-                    tool = self.tools[tool_name]
+            try:
+                tool = self.tools[tool_name]
 
-                    def run_tool():
-                        # All tools accept exec_context and return (result, exec_context) tuple
-                        tool_result = tool.func(**tool_args, exec_context=exec_context)
-                        return tool_result
+                def run_tool():
+                    # Tool accepts exec_context and returns (result, exec_context) tuple
+                    tool_result = tool.func(**tool_args, exec_context=exec_context)
+                    return tool_result
 
-                    # 별도 쓰레드에서 실행
-                    tool_result = await asyncio.wait_for(
-                        loop.run_in_executor(executor, run_tool),
-                        timeout=TOOL_TIMEOUT,
-                    )
+                # 별도 쓰레드에서 실행
+                tool_result = await asyncio.wait_for(
+                    loop.run_in_executor(executor, run_tool),
+                    timeout=self.tool_timeout,
+                )
 
-                    result, exec_context = tool_result
-                    result = str(result)
-                    logger.info(f"Tool {tool_name} completed")
+                result, exec_context = tool_result
+                result = str(result)
+                logger.info(f"Tool {tool_name} completed")
 
-                except asyncio.TimeoutError:
-                    result = f"Error: Tool '{tool_name}' execution exceeded {TOOL_TIMEOUT} seconds timeout."
-                    logger.error(
-                        f"[Task {task_id}] Tool {tool_name} timed out after {TOOL_TIMEOUT}s"
-                    )
-                except Exception as e:
-                    result = f"Error executing tool {tool_name}: {str(e)}"
-                    logger.warning(
-                        f"[Task {task_id}] Tool {tool_name} failed: {str(e)}"
-                    )
+            except asyncio.TimeoutError:
+                result = f"Error: Tool '{tool_name}' execution exceeded {self.tool_timeout} seconds timeout."
+                logger.error(
+                    f"[Task {task_id}] Tool {tool_name} timed out after {self.tool_timeout}s"
+                )
+            except Exception as e:
+                result = f"Error executing tool {tool_name}: {str(e)}"
+                logger.warning(f"[Task {task_id}] Tool {tool_name} failed: {str(e)}")
 
-                # 결과를 메시지에 추가 (reasoning 포함)
-                self.adapter.format_tool_result(tool_call, result, messages, reasoning)
+            # 결과를 메시지에 추가 (reasoning 포함)
+            self.adapter.format_tool_result(tool_call, result, messages, reasoning)
 
         # 최종 답변 요청 메시지 추가
         messages.append(

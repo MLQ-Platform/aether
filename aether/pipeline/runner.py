@@ -129,7 +129,7 @@ def run_thesis(
     thesis_save_basedir = thesis_save_basedir or os.path.join(db_dir, "thesis")
 
     clause_graph = load_clause_graph(clause_load_basedir, version=clause_version)
-    subclause = generate_sub_clause(clause_graph)
+    subclause = generate_sub_clause(clause_graph, config=config)
 
     thesis = generate_thesis(*subclause.clause_trees.values(), config=config)
     logger.info(f"Thesis generated: {thesis.thesis[:100]}...")
@@ -152,9 +152,11 @@ async def run_thesis_parallel(
     thesis_save_basedir = thesis_save_basedir or os.path.join(db_dir, "thesis")
 
     clause_graph = load_clause_graph(clause_load_basedir, version=clause_version)
-    semaphore = asyncio.Semaphore(config.pipeline.max_concurrent_requests)
+    semaphore = asyncio.Semaphore(config.pipeline.max_workers)
 
-    subgraphs = [generate_sub_clause(clause_graph) for _ in range(num_parallel)]
+    subgraphs = [
+        generate_sub_clause(clause_graph, config=config) for _ in range(num_parallel)
+    ]
     completed = 0
 
     async def gen_one(subgraph):
@@ -213,7 +215,7 @@ async def run_claim_parallel(
     thesis_load_basedir = thesis_load_basedir or os.path.join(db_dir, "thesis")
     claim_save_basedir = claim_save_basedir or os.path.join(db_dir, "claim")
 
-    semaphore = asyncio.Semaphore(config.pipeline.max_concurrent_requests)
+    semaphore = asyncio.Semaphore(config.pipeline.max_workers)
 
     theses = load_all_theses(thesis_load_basedir)[:num_parallel]
     logger.info(f"Processing {len(theses)} theses in parallel")
@@ -254,7 +256,7 @@ async def run_statement(
     claim_load_basedir = claim_load_basedir or os.path.join(db_dir, "claim")
     statement_save_basedir = statement_save_basedir or os.path.join(db_dir, "statement")
 
-    semaphore = asyncio.Semaphore(config.pipeline.max_concurrent_requests)
+    semaphore = asyncio.Semaphore(config.pipeline.max_workers)
     provider = factory.get_provider()
 
     claims = sample_claims(claim_load_basedir)
@@ -338,7 +340,7 @@ async def run_statement_parallel(
     claim_load_basedir = claim_load_basedir or os.path.join(db_dir, "claim")
     statement_save_basedir = statement_save_basedir or os.path.join(db_dir, "statement")
 
-    semaphore = asyncio.Semaphore(config.pipeline.max_concurrent_requests)
+    semaphore = asyncio.Semaphore(config.pipeline.max_workers)
     provider = factory.get_provider()
 
     claim_sets = load_all_claim_sets(claim_load_basedir)[:num_parallel]
@@ -403,7 +405,7 @@ async def run_factor_parallel(
     statement_load_basedir = statement_load_basedir or os.path.join(db_dir, "statement")
     factor_save_basedir = factor_save_basedir or os.path.join(db_dir, "factor")
 
-    semaphore = asyncio.Semaphore(config.pipeline.max_concurrent_requests)
+    semaphore = asyncio.Semaphore(config.pipeline.max_workers)
 
     statements = load_all_statements(statement_load_basedir)[:num_parallel]
     logger.info(f"Processing {len(statements)} statements in parallel")

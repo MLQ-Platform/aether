@@ -11,7 +11,7 @@ llm:
 pipeline:
   total_iterations: 4
   revision_iterations: 3
-  max_concurrent_requests: 5
+  max_workers: 5
 
 clause:
   num_trees: 5
@@ -19,6 +19,9 @@ clause:
   period: 10
   num_edges: 500
   max_iterations: 100000000
+  tree_max_iter: 20
+  restart_prob: 0.1
+  length_factor: 2.0
   sim_threshold: 0.2
   weight_threshold: 0.05
   min_signal_ratio: 0.10

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from aether import factory
 from aether.agents.claim.schema import Claim
 from aether.agents.claim.schema import ClaimList
+from aether.agents.rationale.agent import RationaleAgent
 from aether.agents.rationale.schema import Rationale
 from aether.agents.statement.graph import StatementGraph
 from aether.agents.statement.graph.node import Node
@@ -36,13 +37,21 @@ async def verify_claims_loop(
     edges = []
     final_claims = []
 
+    # Reuse agents across rounds to avoid recreating clients
+    rationale_agent = factory.get_rationale_agent(config)
+    modify_agent = factory.get_claim_modify_agent(config)
+
     for i in range(config.pipeline.total_iterations):
         logger.info(
             f"Verification round {i + 1}/{config.pipeline.total_iterations} ({len(claims)} claims)"
         )
 
         rationales = await generate_rationales_async(
-            claims, provider=provider, semaphore=semaphore, config=config
+            claims,
+            provider=provider,
+            semaphore=semaphore,
+            rationale_agent=rationale_agent,
+            config=config,
         )
 
         rejected_rationales: list[Rationale] = [
@@ -69,7 +78,11 @@ async def verify_claims_loop(
 
         logger.info(f"Modifying {len(rejected_claims)} rejected claims")
         modified_claims = await generate_rationales_modify_async(
-            rejected_claims, rejected_rationales, semaphore=semaphore, config=config
+            rejected_claims,
+            rejected_rationales,
+            semaphore=semaphore,
+            modify_agent=modify_agent,
+            config=config,
         )
 
         instances.extend(modified_claims)
@@ -86,10 +99,12 @@ async def generate_rationales_async(
     claims: list[Claim],
     provider: InMemoryDataProvider,
     semaphore: asyncio.Semaphore,
+    rationale_agent: RationaleAgent | None = None,
     config: Config = None,
 ) -> list[Rationale]:
     config = config or get_config()
-    rationale_agent = factory.get_rationale_agent(config)
+    if rationale_agent is None:
+        rationale_agent = factory.get_rationale_agent(config)
     exec_context = {"df": provider.get(config.data.ticker)}
     completed = 0
 
@@ -113,10 +128,12 @@ async def generate_rationales_modify_async(
     claims: list[Claim],
     rationales: list[Rationale],
     semaphore: asyncio.Semaphore,
+    modify_agent=None,
     config: Config = None,
 ) -> list[Claim]:
     config = config or get_config()
-    modify_agent = factory.get_claim_modify_agent(config)
+    if modify_agent is None:
+        modify_agent = factory.get_claim_modify_agent(config)
 
     async def limited(claim, rationale):
         async with semaphore:

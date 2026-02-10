@@ -113,6 +113,8 @@ def get_rationale_agent(config: Config = None):
         tools=tools,
         system_promt_path="statement-rationale.txt",
         max_iterations=config.agent.react_max_iterations,
+        max_workers=config.pipeline.max_workers,
+        tool_timeout=config.agent.tool_timeout,
         parse_retries=config.llm.parse_retries,
     )
     return rationale_agent

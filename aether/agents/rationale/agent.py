@@ -40,7 +40,9 @@ class RationaleAgent(Agent):
             model, client, schema=Rationale, max_retries=parse_retries
         )
 
-    async def run_async(self, claim: Claim, exec_context: dict = {}) -> str | Rationale:
+    async def run_async(
+        self, claim: Claim, exec_context: dict | None = None
+    ) -> str | Rationale:
         """
         Async Rationale Generation Agent Run
         """

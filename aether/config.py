@@ -29,7 +29,7 @@ class LLMConfig:
 class PipelineConfig:
     total_iterations: int = 4
     revision_iterations: int = 3
-    max_concurrent_requests: int = 5
+    max_workers: int = 5
 
 
 @dataclass
@@ -39,6 +39,9 @@ class ClauseConfig:
     period: int = 10
     num_edges: int = 50
     max_iterations: int = 1000
+    tree_max_iter: int = 20
+    restart_prob: float = 0.1
+    length_factor: float = 2.0
     sim_threshold: float = 0.2
     weight_threshold: float = 0.05
     min_signal_ratio: float = 0.10

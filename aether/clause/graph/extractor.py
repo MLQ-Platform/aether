@@ -11,11 +11,15 @@ class SubgraphExtractor:
     Random walk based subgraph extraction from ClauseGraph
     """
 
-    RESTART_PROB = 0.1
-    LENGTH_FACTOR = 2.0
-
-    def __init__(self, graph: ClauseGraph):
+    def __init__(
+        self,
+        graph: ClauseGraph,
+        restart_prob: float = 0.1,
+        length_factor: float = 2.0,
+    ):
         self.graph = graph
+        self.restart_prob = restart_prob
+        self.length_factor = length_factor
 
     def extract(self, size: int, start_node: int | None = None) -> ClauseGraph:
         """
@@ -48,12 +52,12 @@ class SubgraphExtractor:
         visited = {start}
         current = start
 
-        for _ in range(int(size * self.LENGTH_FACTOR)):
+        for _ in range(int(size * self.length_factor)):
             if len(visited) >= size:
                 break
 
             # Restart probability
-            if random.random() < self.RESTART_PROB:
+            if random.random() < self.restart_prob:
                 current = start
                 continue
 

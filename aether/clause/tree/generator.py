@@ -13,7 +13,7 @@ class ClauseGenerator:
     def __init__(self, nodes: list[Node]):
         self.nodes = nodes
 
-    def generate(self, max_depth: int):
+    def generate(self, max_depth: int, tree_max_iter: int = 20):
         """
         Generate a random Clause Tree
         """
@@ -28,7 +28,7 @@ class ClauseGenerator:
             next_state = self.step(node_index)
             mask = next_state["mask"]
 
-            if next_state["done"] or _iter > 20:
+            if next_state["done"] or _iter > tree_max_iter:
                 return self.tree
 
     def reset(self, max_depth: int, tree_name: str | None = "") -> dict:

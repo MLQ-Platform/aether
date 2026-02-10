@@ -55,8 +55,8 @@ def show_system_info(config):
         console.print(Rule("system", style="dim", align="left"))
     console.print(f" {BAR}  {cap.get().strip()}")
     items = [
-        ("semaphore", config.pipeline.max_concurrent_requests),
-        ("threads", "1 (tool executor)"),
+        ("semaphore", config.pipeline.max_workers),
+        ("threads", f"{config.pipeline.max_workers} (tool executor)"),
         ("timeout", f"{config.llm.timeout}s"),
         ("max_retries", config.llm.max_retries),
         ("parse_retries", config.llm.parse_retries),

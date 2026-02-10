@@ -26,7 +26,9 @@ def generate_trees(
     trees = []
 
     while len(trees) < num_trees:
-        tree = generator.generate(max_depth=max_depth)
+        tree = generator.generate(
+            max_depth=max_depth, tree_max_iter=config.clause.tree_max_iter
+        )
         tree.name = str(generate_uuid())
 
         if tree.iscompleted and tree.depth == max_depth:
@@ -56,10 +58,17 @@ def generate_clause(
     return clause_graph
 
 
-def generate_sub_clause(clause_graph: ClauseGraph) -> ClauseGraph:
+def generate_sub_clause(
+    clause_graph: ClauseGraph, config: Config = None
+) -> ClauseGraph:
     from aether.clause.graph.extractor import SubgraphExtractor
 
-    extractor = SubgraphExtractor(clause_graph)
+    config = config or get_config()
+    extractor = SubgraphExtractor(
+        clause_graph,
+        restart_prob=config.clause.restart_prob,
+        length_factor=config.clause.length_factor,
+    )
     subgraph = extractor.extract(size=2)
     return subgraph
 

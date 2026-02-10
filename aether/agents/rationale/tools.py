@@ -3,7 +3,7 @@ from io import StringIO
 from aether.llm.react.tools.base import Tool
 
 
-def pyexecutor(code: str, exec_context: dict = {}) -> tuple[str, dict]:
+def pyexecutor(code: str, exec_context: dict | None = None) -> tuple[str, dict]:
     """
     Python Code Executor
 
@@ -12,6 +12,8 @@ def pyexecutor(code: str, exec_context: dict = {}) -> tuple[str, dict]:
         exec_context: Execution context dictionary (if None, creates new context)
                       Context persists across iterations within the same coroutine (claim)
     """
+    if exec_context is None:
+        exec_context = {}
 
     if "df" not in exec_context:
         error_msg = "Error: DataFrame 'df' not found in context"
