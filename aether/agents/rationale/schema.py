@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel
 from pydantic import Field
 
@@ -8,7 +7,7 @@ class Rationale(BaseModel):
     Rationale
     """
 
-    uuid: Optional[int] = None
+    uuid: int | None = None
 
     is_accepted: bool = Field(description="Whether this rationale is accepted")
 

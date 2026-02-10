@@ -1,4 +1,3 @@
-from typing import List
 from openai import OpenAI
 from aether.agents.base import Agent
 from aether.agents.claim.schema import Claim
@@ -26,7 +25,7 @@ class StatementAgent(Agent):
         super().__init__(model, client, system_promt_path)
         self.llm = StructuredLLM(model, client, schema=Statement, **kwargs)
 
-    def run(self, claims: List[Claim]) -> str:
+    def run(self, claims: list[Claim]) -> str:
         """
         Statement Agent Run
         """
@@ -57,7 +56,7 @@ class StatementAgent(Agent):
 
         return result
 
-    async def run_async(self, claims: List[Claim]) -> str:
+    async def run_async(self, claims: list[Claim]) -> str:
         """
         Statement Agent Run (async)
         """
@@ -83,7 +82,7 @@ class StatementAgent(Agent):
 
         return result
 
-    def user_message(self, claims: List[Claim]) -> str:
+    def user_message(self, claims: list[Claim]) -> str:
         """
         User Message
         """

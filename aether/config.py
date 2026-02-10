@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
-from typing import Optional
 import yaml
 
 # Project root: aether/ package parent
@@ -20,7 +19,7 @@ def resolve_path(path: str) -> str:
 class LLMConfig:
     model: str = "deepseek/deepseek-v3.2-exp"
     base_url: str = "https://openrouter.ai/api/v1"
-    api_key: Optional[str] = None
+    api_key: str | None = None
     timeout: float = 120.0
     max_retries: int = 3
     parse_retries: int = 5
@@ -96,10 +95,10 @@ class Config:
         )
 
 
-_config: Optional[Config] = None
+_config: Config | None = None
 
 
-def get_config(path: Optional[str] = None) -> Config:
+def get_config(path: str | None = None) -> Config:
     global _config
     if _config is None:
         _config = Config.from_yaml(path) if path else Config.from_yaml()

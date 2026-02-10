@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel
 from pydantic import Field
 
@@ -8,7 +7,7 @@ class FactorStatement(BaseModel):
     Factor Statement
     """
 
-    uuid: Optional[int] = None
+    uuid: int | None = None
 
     conclusion: str = Field(
         description="The concrete final mathematical proposition established through the proof.",

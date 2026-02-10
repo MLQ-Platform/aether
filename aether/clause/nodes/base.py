@@ -1,5 +1,4 @@
 import inspect
-from typing import List
 from anytree import NodeMixin
 from aether.clause import nodes
 
@@ -12,7 +11,7 @@ class NodeIOTypes:
 class Node(NodeMixin):
     def __init__(
         self,
-        input_types: List[NodeIOTypes],
+        input_types: list[NodeIOTypes],
         output_type: NodeIOTypes,
         max_childs: int,
     ):

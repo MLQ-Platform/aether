@@ -2,9 +2,6 @@ import json
 from abc import ABC
 from abc import abstractmethod
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 from openai import AsyncOpenAI
 from openai import OpenAI
 from aether.llm.react.tools.base import Tool
@@ -22,7 +19,7 @@ class ToolCallAdapter(ABC):
     """
 
     @abstractmethod
-    def convert_tools_to_api_format(self, tools: List[Tool]) -> List[Dict]:
+    def convert_tools_to_api_format(self, tools: list[Tool]) -> list[dict]:
         """
         Tool 리스트를 해당 모델의 API 형식으로 변환
         """
@@ -30,7 +27,7 @@ class ToolCallAdapter(ABC):
 
     @abstractmethod
     def call_with_tools(
-        self, messages: List[Dict], tools: List[Dict], model: str, **kwargs
+        self, messages: list[dict], tools: list[dict], model: str, **kwargs
     ) -> Any:
         """
         Tool을 사용한 API 호출
@@ -38,7 +35,7 @@ class ToolCallAdapter(ABC):
         pass
 
     @abstractmethod
-    def extract_tool_calls(self, response: Any) -> List[Dict]:
+    def extract_tool_calls(self, response: Any) -> list[dict]:
         """
         응답에서 Tool Call 추출
         """
@@ -53,7 +50,7 @@ class ToolCallAdapter(ABC):
 
     @abstractmethod
     def format_tool_result(
-        self, tool_call: Dict, result: str, messages: List[Dict], reasoning: str = None
+        self, tool_call: dict, result: str, messages: list[dict], reasoning: str = None
     ) -> None:
         """
         Tool 실행 결과를 메시지에 추가 (in-place)
@@ -79,7 +76,7 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
         self.model = model
         self.client = client
 
-    def convert_tools_to_api_format(self, tools: List[Tool]) -> List[Dict]:
+    def convert_tools_to_api_format(self, tools: list[Tool]) -> list[dict]:
         """
         Tool → OpenAI tools 형식
         """
@@ -97,9 +94,9 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
 
     def call_with_tools(
         self,
-        messages: List[Dict],
-        tools: List[Dict],
-        tool_choice: Optional[str] = "auto",
+        messages: list[dict],
+        tools: list[dict],
+        tool_choice: str | None = "auto",
         **kwargs,
     ) -> Any:
         """
@@ -115,7 +112,7 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
             **kwargs,
         )
 
-    def extract_tool_calls(self, response: Any) -> List[Dict]:
+    def extract_tool_calls(self, response: Any) -> list[dict]:
         """
         OpenAI 응답에서 tool calls 추출
         """
@@ -150,7 +147,7 @@ class OpenAIToolCallAdapter(ToolCallAdapter):
         return bool(message.tool_calls)
 
     def format_tool_result(
-        self, tool_call: Dict, result: str, messages: List[Dict], reasoning: str = None
+        self, tool_call: dict, result: str, messages: list[dict], reasoning: str = None
     ) -> None:
         """
         Tool 결과를 메시지에 추가 (OpenAI 형식)
@@ -204,9 +201,9 @@ class AsyncOpenAIToolCallAdapter(OpenAIToolCallAdapter):
 
     async def call_with_tools(
         self,
-        messages: List[Dict],
-        tools: List[Dict],
-        tool_choice: Optional[str] = "auto",
+        messages: list[dict],
+        tools: list[dict],
+        tool_choice: str | None = "auto",
         **kwargs,
     ) -> Any:
         """

@@ -1,8 +1,6 @@
 import asyncio
 import atexit
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
-from typing import Optional
 from aether.llm.react.tools.adapter import ToolCallAdapter
 from aether.llm.react.tools.base import Tool
 from aether.logger import get_logger
@@ -17,13 +15,13 @@ class ReactAgent:
     """
 
     # Shared ThreadPoolExecutor for all instances
-    _shared_executor: Optional[ThreadPoolExecutor] = None
+    _shared_executor: ThreadPoolExecutor | None = None
     _shutdown_registered = False
 
     def __init__(
         self,
         adapter: ToolCallAdapter,
-        tools: List[Tool],
+        tools: list[Tool],
         max_iterations: int = 10,
     ):
         self.adapter = adapter
@@ -36,8 +34,8 @@ class ReactAgent:
     def run(
         self,
         query: str,
-        system_prompt: Optional[str] = None,
-        task_id: Optional[str] = None,
+        system_prompt: str | None = None,
+        task_id: str | None = None,
         **kwargs,
     ) -> str:
         """
@@ -118,9 +116,9 @@ class ReactAgent:
     async def run_async(
         self,
         query: str,
-        system_prompt: Optional[str] = None,
-        exec_context: Optional[dict] = {},
-        task_id: Optional[str] = None,
+        system_prompt: str | None = None,
+        exec_context: dict | None = {},
+        task_id: str | None = None,
         **kwargs,
     ) -> str:
         """

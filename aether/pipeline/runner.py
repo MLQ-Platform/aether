@@ -1,6 +1,5 @@
 import asyncio
 import os
-from typing import List
 from aether import factory
 from aether.agents.claim.schema import Claim
 from aether.agents.statement.schema import Statement
@@ -40,7 +39,7 @@ def sample_thesis(thesis_load_basedir: str) -> Thesis:
     return thesis
 
 
-def sample_claims(claim_load_basedir: str) -> List[Claim]:
+def sample_claims(claim_load_basedir: str) -> list[Claim]:
     files = [f for f in os.listdir(claim_load_basedir) if f.endswith(".json")]
     filepath = os.path.join(claim_load_basedir, files[0])
     claims_dict = load_json(filepath)
@@ -293,7 +292,7 @@ async def run_statement(
 
 
 async def _process_one_statement(
-    claims: List[Claim],
+    claims: list[Claim],
     provider,
     semaphore: asyncio.Semaphore,
     statement_save_basedir: str,

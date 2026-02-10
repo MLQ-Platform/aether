@@ -1,10 +1,6 @@
 import json
 from pathlib import Path
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 import networkx as nx
 import pandas as pd
 from aether.clause.tree.base import ClauseTree
@@ -21,8 +17,8 @@ class ClauseGraph:
     def __init__(self, name: str = "ClauseGraph"):
         self.name = name
         self.graph = nx.Graph()
-        self.clause_trees: Dict[int, ClauseTree] = {}
-        self.edge_calculator: Optional[Callable] = None
+        self.clause_trees: dict[int, ClauseTree] = {}
+        self.edge_calculator: Callable | None = None
 
     def __repr__(self):
         return f"ClauseGraph({self.num_nodes} nodes)"
@@ -38,7 +34,7 @@ class ClauseGraph:
 
     def add_nodes(
         self,
-        trees: List[ClauseTree],
+        trees: list[ClauseTree],
         sim_threshold: float = 0.2,
         weight_threshold: float = 0.0,
         min_signal_ratio: float = 0.10,
@@ -122,13 +118,13 @@ class ClauseGraph:
         similarity = len(set(nodes_a) & set(nodes_b)) / len(set(nodes_a) | set(nodes_b))
         return similarity <= threshold
 
-    def get_neighbors(self, node_id: int) -> List[int]:
+    def get_neighbors(self, node_id: int) -> list[int]:
         """
         노드의 이웃들 반환
         """
         return list(self.graph.neighbors(node_id))
 
-    def get_edge_weight(self, node_id1: int, node_id2: int) -> Optional[float]:
+    def get_edge_weight(self, node_id1: int, node_id2: int) -> float | None:
         """
         두 노드 사이의 간선 가중치 반환
         """
@@ -143,7 +139,7 @@ class ClauseGraph:
         """
         return self.clause_trees[node_id]
 
-    def get_edges(self, data=True) -> List[Tuple[int, int, dict]]:
+    def get_edges(self, data=True) -> list[tuple[int, int, dict]]:
         """
         모든 간선 반환
         """

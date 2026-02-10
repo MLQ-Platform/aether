@@ -1,6 +1,4 @@
 import os
-from typing import List
-from typing import Optional
 from aether import factory
 from aether.clause.graph.base import ClauseGraph
 from aether.clause.graph.edge import SUEdgeCalculator
@@ -20,7 +18,7 @@ def generate_trees(
     max_depth: int = None,
     num_trees: int = None,
     config: Config = None,
-) -> List[ClauseTree]:
+) -> list[ClauseTree]:
     config = config or get_config()
     max_depth = max_depth if max_depth is not None else config.clause.max_depth
     num_trees = num_trees if num_trees is not None else config.clause.num_trees
@@ -38,8 +36,8 @@ def generate_trees(
 
 
 def generate_clause(
-    trees: List[ClauseTree],
-    clause_graph: Optional[ClauseGraph] = None,
+    trees: list[ClauseTree],
+    clause_graph: ClauseGraph | None = None,
     config: Config = None,
 ) -> ClauseGraph:
     config = config or get_config()

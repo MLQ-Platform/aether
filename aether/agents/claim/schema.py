@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel
 from pydantic import Field
 
@@ -8,7 +7,7 @@ class Claim(BaseModel):
     Thesis로부터 분해된 최소 논리 단위
     """
 
-    uuid: Optional[int] = None
+    uuid: int | None = None
 
     claim: str = Field(
         description="A verifiable proposition sentence (must be atomic and specific)"

@@ -1,11 +1,6 @@
-from typing import Dict
-from typing import List
 from aether.agents.claim.schema import Claim
 from aether.agents.rationale.schema import Rationale
 from aether.agents.statement.graph.node import Node
-from aether.logger import get_logger
-
-logger = get_logger(__name__)
 
 
 class StatementGraph:
@@ -14,14 +9,7 @@ class StatementGraph:
     """
 
     def __init__(self):
-        self.nodes: Dict[int, Node] = {}
-
-    def add_nodes(self, nodes: List[Node]):
-        """
-        Add multiple nodes to the graph
-        """
-        for node in nodes:
-            self.add_node(node)
+        self.nodes: dict[int, Node] = {}
 
     def add_node(self, node: Node):
         """

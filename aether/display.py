@@ -1,12 +1,27 @@
 import time
 from contextlib import contextmanager
+from aether import __version__ as VERSION
+from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
+from rich.rule import Rule
 from rich.spinner import Spinner
 from rich.text import Text
-from aether.console import console
+from rich.theme import Theme
 
-VERSION = "0.2.0"
+console = Console(
+    theme=Theme(
+        {
+            "info": "cyan",
+            "success": "bold green",
+            "warning": "bold yellow",
+            "error": "bold red",
+            "dim": "dim white",
+        }
+    ),
+    highlight=False,
+)
+
 BAR = "[dim]│[/dim]"
 
 _active_display = None
@@ -23,7 +38,10 @@ def show_header(**context):
     Usage:
         show_header(model="deepseek/deepseek-v3.2-exp", ticker="BTCUSDT")
     """
-    console.print(f" [bold blue]┌[/bold blue]  [bold]AETHER[/bold] v{VERSION}")
+    console.print()
+    console.print(
+        f" [bold blue]┌[/bold blue]  [bold]AETHER[/bold] [dim]v{VERSION}[/dim]"
+    )
     console.print(f" {BAR}")
     if context:
         for key, value in context.items():
@@ -33,13 +51,18 @@ def show_header(**context):
 
 def show_system_info(config):
     """Display concurrency and system info from config."""
-    console.print(
-        f" {BAR}  [dim]semaphore      {config.pipeline.max_concurrent_requests}[/dim]"
-    )
-    console.print(f" {BAR}  [dim]threads        1 (tool executor)[/dim]")
-    console.print(f" {BAR}  [dim]timeout        {config.llm.timeout}s[/dim]")
-    console.print(f" {BAR}  [dim]max_retries    {config.llm.max_retries}[/dim]")
-    console.print(f" {BAR}  [dim]parse_retries  {config.llm.parse_retries}[/dim]")
+    with console.capture() as cap:
+        console.print(Rule("system", style="dim", align="left"))
+    console.print(f" {BAR}  {cap.get().strip()}")
+    items = [
+        ("semaphore", config.pipeline.max_concurrent_requests),
+        ("threads", "1 (tool executor)"),
+        ("timeout", f"{config.llm.timeout}s"),
+        ("max_retries", config.llm.max_retries),
+        ("parse_retries", config.llm.parse_retries),
+    ]
+    for key, val in items:
+        console.print(f" {BAR}  [dim]{key:<15} {val}[/dim]")
     console.print(f" {BAR}")
 
 
@@ -155,7 +178,13 @@ def show_summary(lines: list[tuple[str, str]]):
     Args:
         lines: [("Total", "6 theses"), ("Time", "37.2s (12.4s/iter)"), ("Output", "database/thesis/")]
     """
-    content = "\n".join(f"  [cyan]{k:<8}[/cyan] {v}" for k, v in lines)
+    parts = []
+    for k, v in lines:
+        if k.lower() == "output":
+            parts.append(f"  [cyan]{k:<8}[/cyan] [bold]{v}[/bold]")
+        else:
+            parts.append(f"  [cyan]{k:<8}[/cyan] {v}")
+    content = "\n".join(parts)
     panel = Panel(
         content, title="Summary", border_style="dim", expand=False, padding=(0, 1)
     )
@@ -167,19 +196,31 @@ def show_summary(lines: list[tuple[str, str]]):
     console.print(f" {BAR}")
 
 
-def show_error_block(title: str, message: str):
+def show_error_block(title: str, message: str, verbose: bool = False):
     """Display a clack-style error block."""
     console.print(f" {BAR}")
     console.print(f" [red]✖[/red]  [bold red]{title}[/bold red]")
     console.print(f" {BAR}")
-    console.print(f" {BAR}  [red]{message}[/red]")
+    for line in message.split("\n"):
+        console.print(f" {BAR}  [red]{line}[/red]")
     console.print(f" {BAR}")
+    if verbose:
+        import traceback as tb_mod
+
+        tb_text = tb_mod.format_exc().strip()
+        if tb_text and tb_text != "NoneType: None":
+            for line in tb_text.split("\n"):
+                console.print(f" {BAR}  [dim]{line}[/dim]")
+            console.print(f" {BAR}")
     console.print(" [dim]└[/dim]  [dim]Aborted[/dim]")
 
 
-def show_closer(text: str = "Done"):
-    """Display the closing line."""
-    console.print(f" [dim]└[/dim]  {text} [green]✓[/green]")
+def show_closer(text: str = "Done", elapsed: float = None):
+    """Display the closing line with optional elapsed time."""
+    if elapsed is not None:
+        console.print(f" [dim]└[/dim]  {text} in {elapsed:.1f}s [green]✓[/green]")
+    else:
+        console.print(f" [dim]└[/dim]  {text} [green]✓[/green]")
 
 
 def show_config_display(config_dict: dict):

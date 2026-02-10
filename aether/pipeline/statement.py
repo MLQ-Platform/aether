@@ -1,6 +1,4 @@
 import asyncio
-from typing import List
-from typing import Tuple
 from pydantic import BaseModel
 from aether import factory
 from aether.agents.claim.schema import Claim
@@ -20,11 +18,11 @@ logger = get_logger(__name__)
 
 
 async def verify_claims_loop(
-    claims: List[Claim],
+    claims: list[Claim],
     provider: InMemoryDataProvider,
     semaphore: asyncio.Semaphore,
     config: Config = None,
-) -> Tuple[List[Claim], List[BaseModel], List[Tuple[str, str]]]:
+) -> tuple[list[Claim], list[BaseModel], list[tuple[str, str]]]:
     """Run the iterative claim verification loop.
 
     Returns:
@@ -47,13 +45,13 @@ async def verify_claims_loop(
             claims, provider=provider, semaphore=semaphore, config=config
         )
 
-        rejected_rationales: List[Rationale] = [
+        rejected_rationales: list[Rationale] = [
             x[1] for x in zip(claims, rationales) if not x[1].is_accepted
         ]
-        rejected_claims: List[Claim] = [
+        rejected_claims: list[Claim] = [
             x[0] for x in zip(claims, rationales) if not x[1].is_accepted
         ]
-        accepted_claims: List[Claim] = [
+        accepted_claims: list[Claim] = [
             x[0] for x in zip(claims, rationales) if x[1].is_accepted
         ]
         final_claims.extend(accepted_claims)
@@ -85,11 +83,11 @@ async def verify_claims_loop(
 
 
 async def generate_rationales_async(
-    claims: List[Claim],
+    claims: list[Claim],
     provider: InMemoryDataProvider,
     semaphore: asyncio.Semaphore,
     config: Config = None,
-) -> List[Rationale]:
+) -> list[Rationale]:
     config = config or get_config()
     rationale_agent = factory.get_rationale_agent(config)
     exec_context = {"df": provider.get(config.data.ticker)}
@@ -112,11 +110,11 @@ async def generate_rationales_async(
 
 
 async def generate_rationales_modify_async(
-    claims: List[Claim],
-    rationales: List[Rationale],
+    claims: list[Claim],
+    rationales: list[Rationale],
     semaphore: asyncio.Semaphore,
     config: Config = None,
-) -> List[Claim]:
+) -> list[Claim]:
     config = config or get_config()
     modify_agent = factory.get_claim_modify_agent(config)
 
@@ -126,12 +124,12 @@ async def generate_rationales_modify_async(
 
     tasks = [limited(claim, rationale) for claim, rationale in zip(claims, rationales)]
     claims: ClaimList = await asyncio.gather(*tasks, return_exceptions=True)
-    claims: List[Claim] = add_uuid(claims)
+    claims: list[Claim] = add_uuid(claims)
     return claims
 
 
 def generate_statement(
-    final_claims: List[Claim],
+    final_claims: list[Claim],
     config: Config = None,
 ) -> Statement:
     statement_agent = factory.get_statement_agent(config)
@@ -140,19 +138,9 @@ def generate_statement(
     return statement
 
 
-async def generate_statement_async(
-    final_claims: List[Claim],
-    config: Config = None,
-) -> Statement:
-    statement_agent = factory.get_statement_agent(config, async_=True)
-    statement = await statement_agent.run_async(final_claims)
-    statement.uuid = generate_uuid()
-    return statement
-
-
 def generate_statement_graph(
-    instances: List[BaseModel],
-    edges: List[Tuple[str, str]],
+    instances: list[BaseModel],
+    edges: list[tuple[str, str]],
 ) -> StatementGraph:
     graph = StatementGraph()
 
@@ -170,7 +158,7 @@ def generate_statement_graph(
     return graph
 
 
-def get_final_claims(statement_graph: StatementGraph) -> List[Claim]:
+def get_final_claims(statement_graph: StatementGraph) -> list[Claim]:
     final_claims = []
 
     for node in statement_graph.nodes.values():

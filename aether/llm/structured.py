@@ -1,14 +1,13 @@
 import json
 import re
-from typing import Optional
-from typing import Union
 from openai import AsyncOpenAI
 from openai import OpenAI
 from pydantic import BaseModel
 from pydantic import ValidationError
 from aether.exceptions import LLMParseError
-from aether.llm.types import Messages
 from aether.logger import get_logger
+
+Messages = list[dict]
 
 logger = get_logger(__name__)
 
@@ -41,10 +40,10 @@ class StructuredLLM:
     def __init__(
         self,
         model: str,
-        client: Union[OpenAI, AsyncOpenAI],
+        client: OpenAI | AsyncOpenAI,
         schema: type[BaseModel],
         temperature: float = 0.0,
-        max_tokens: Optional[int] = None,
+        max_tokens: int | None = None,
         max_retries: int = 3,
         **kwargs,
     ):

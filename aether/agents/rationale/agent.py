@@ -1,5 +1,3 @@
-from typing import List
-from typing import Union
 from openai import AsyncOpenAI
 from openai import OpenAI
 from aether.agents.base import Agent
@@ -25,8 +23,8 @@ class RationaleAgent(Agent):
     def __init__(
         self,
         model: str,
-        client: Union[OpenAI, AsyncOpenAI],
-        tools: List[Tool],
+        client: OpenAI | AsyncOpenAI,
+        tools: list[Tool],
         system_promt_path: str = "statement-rationale.txt",
         parse_retries: int = 3,
         **kwargs,
@@ -42,9 +40,7 @@ class RationaleAgent(Agent):
             model, client, schema=Rationale, max_retries=parse_retries
         )
 
-    async def run_async(
-        self, claim: Claim, exec_context: dict = {}
-    ) -> Union[str, Rationale]:
+    async def run_async(self, claim: Claim, exec_context: dict = {}) -> str | Rationale:
         """
         Async Rationale Generation Agent Run
         """

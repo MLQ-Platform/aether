@@ -1,6 +1,4 @@
 import random
-from typing import Optional
-from typing import Set
 import numpy as np
 from aether.clause.graph.base import ClauseGraph
 from aether.logger import get_logger
@@ -19,7 +17,7 @@ class SubgraphExtractor:
     def __init__(self, graph: ClauseGraph):
         self.graph = graph
 
-    def extract(self, size: int, start_node: Optional[int] = None) -> ClauseGraph:
+    def extract(self, size: int, start_node: int | None = None) -> ClauseGraph:
         """
         Extract subgraph using random walk
         """
@@ -42,7 +40,7 @@ class SubgraphExtractor:
         logger.debug(f"Subgraph extracted ({nodes} nodes, {edges} edges)")
         return subgraph
 
-    def _traverse(self, size: int, start: int) -> Set[int]:
+    def _traverse(self, size: int, start: int) -> set[int]:
         """
         Perform random walk to collect nodes
         """
@@ -82,7 +80,7 @@ class SubgraphExtractor:
 
         return visited
 
-    def _build(self, node_ids: Set[int]) -> ClauseGraph:
+    def _build(self, node_ids: set[int]) -> ClauseGraph:
         """
         Build ClauseGraph subgraph from nodes
         """

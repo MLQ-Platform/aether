@@ -1,7 +1,7 @@
 import asyncio
+import os
 import time
 from dataclasses import asdict
-from typing import Optional
 import typer
 from aether.display import show_closer
 from aether.display import show_config_display
@@ -23,8 +23,24 @@ _verbose = False
 _skip_confirm = False
 
 
+def _version_callback(value: bool):
+    if value:
+        from aether import __version__
+
+        typer.echo(f"aether {__version__}")
+        raise typer.Exit()
+
+
 @app.callback()
 def callback(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        "-V",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show version",
+    ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose logging"
     ),
@@ -66,16 +82,15 @@ def _time_summary(total_time: float, iter_count: int) -> str:
 @app.command()
 def clause(
     version: str = typer.Option("v0", "--version", help="Clause graph version tag"),
-    output_dir: Optional[str] = typer.Option(
+    output_dir: str | None = typer.Option(
         None, "--output", "-o", help="Output directory"
     ),
-    config_path: Optional[str] = typer.Option(
+    config_path: str | None = typer.Option(
         None, "--config", "-c", help="Config YAML path"
     ),
 ):
     """Generate a ClauseGraph from random indicator trees."""
     try:
-        import os
         from aether.config import get_config
         from aether.config import resolve_path
         from aether.pipeline.clause import build_clause_graph
@@ -114,15 +129,11 @@ def clause(
                 ("Output", save_dir),
             ]
         )
-        show_closer()
+        show_closer(elapsed=total_time)
     except typer.Exit:
         raise
     except Exception as e:
-        import traceback
-
-        show_error_block("Clause Generation Failed", str(e))
-        if _verbose:
-            traceback.print_exc()
+        show_error_block("Clause Generation Failed", str(e), verbose=_verbose)
         raise typer.Exit(code=1)
 
 
@@ -131,13 +142,13 @@ def thesis(
     clause_version: str = typer.Option(
         "v0", "--clause-version", help="Clause graph version to load"
     ),
-    clause_dir: Optional[str] = typer.Option(
+    clause_dir: str | None = typer.Option(
         None, "--clause-dir", help="Clause graph directory"
     ),
-    output_dir: Optional[str] = typer.Option(
+    output_dir: str | None = typer.Option(
         None, "--output", "-o", help="Output directory"
     ),
-    config_path: Optional[str] = typer.Option(
+    config_path: str | None = typer.Option(
         None, "--config", "-c", help="Config YAML path"
     ),
     parallel: int = typer.Option(1, "--parallel", "-p", help="Number of parallel runs"),
@@ -146,6 +157,7 @@ def thesis(
     """Generate a thesis from a ClauseGraph subgraph."""
     try:
         from aether.config import get_config
+        from aether.config import resolve_path
         from aether.pipeline.runner import run_thesis
         from aether.pipeline.runner import run_thesis_parallel
 
@@ -189,33 +201,33 @@ def thesis(
             show_step_result(_pluralize(count, "thesis", "theses") + " generated")
 
         total_time = time.time() - total_start
+        output_path = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "thesis"
+        )
         show_summary(
             [
                 ("Total", _pluralize(total_count, "thesis", "theses")),
                 ("Time", _time_summary(total_time, iter_count)),
+                ("Output", output_path),
             ]
         )
-        show_closer()
+        show_closer(elapsed=total_time)
     except typer.Exit:
         raise
     except Exception as e:
-        import traceback
-
-        show_error_block("Thesis Generation Failed", str(e))
-        if _verbose:
-            traceback.print_exc()
+        show_error_block("Thesis Generation Failed", str(e), verbose=_verbose)
         raise typer.Exit(code=1)
 
 
 @app.command()
 def claim(
-    thesis_dir: Optional[str] = typer.Option(
+    thesis_dir: str | None = typer.Option(
         None, "--thesis-dir", help="Thesis directory"
     ),
-    output_dir: Optional[str] = typer.Option(
+    output_dir: str | None = typer.Option(
         None, "--output", "-o", help="Output directory"
     ),
-    config_path: Optional[str] = typer.Option(
+    config_path: str | None = typer.Option(
         None, "--config", "-c", help="Config YAML path"
     ),
     parallel: int = typer.Option(1, "--parallel", "-p", help="Number of parallel runs"),
@@ -224,6 +236,7 @@ def claim(
     """Decompose a thesis into verifiable claims."""
     try:
         from aether.config import get_config
+        from aether.config import resolve_path
         from aether.pipeline.runner import run_claim
         from aether.pipeline.runner import run_claim_parallel
 
@@ -267,33 +280,31 @@ def claim(
             )
 
         total_time = time.time() - total_start
+        output_path = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "claim"
+        )
         show_summary(
             [
                 ("Total", _pluralize(total_count, "claim set", "claim sets")),
                 ("Time", _time_summary(total_time, iter_count)),
+                ("Output", output_path),
             ]
         )
-        show_closer()
+        show_closer(elapsed=total_time)
     except typer.Exit:
         raise
     except Exception as e:
-        import traceback
-
-        show_error_block("Claim Decomposition Failed", str(e))
-        if _verbose:
-            traceback.print_exc()
+        show_error_block("Claim Decomposition Failed", str(e), verbose=_verbose)
         raise typer.Exit(code=1)
 
 
 @app.command()
 def statement(
-    claim_dir: Optional[str] = typer.Option(
-        None, "--claim-dir", help="Claims directory"
-    ),
-    output_dir: Optional[str] = typer.Option(
+    claim_dir: str | None = typer.Option(None, "--claim-dir", help="Claims directory"),
+    output_dir: str | None = typer.Option(
         None, "--output", "-o", help="Output directory"
     ),
-    config_path: Optional[str] = typer.Option(
+    config_path: str | None = typer.Option(
         None, "--config", "-c", help="Config YAML path"
     ),
     parallel: int = typer.Option(1, "--parallel", "-p", help="Number of parallel runs"),
@@ -302,6 +313,7 @@ def statement(
     """Verify claims and synthesize a statement."""
     try:
         from aether.config import get_config
+        from aether.config import resolve_path
         from aether.pipeline.runner import run_statement
         from aether.pipeline.runner import run_statement_parallel
 
@@ -350,33 +362,33 @@ def statement(
             )
 
         total_time = time.time() - total_start
+        output_path = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "statement"
+        )
         show_summary(
             [
                 ("Total", _pluralize(total_count, "statement", "statements")),
                 ("Time", _time_summary(total_time, iter_count)),
+                ("Output", output_path),
             ]
         )
-        show_closer()
+        show_closer(elapsed=total_time)
     except typer.Exit:
         raise
     except Exception as e:
-        import traceback
-
-        show_error_block("Statement Generation Failed", str(e))
-        if _verbose:
-            traceback.print_exc()
+        show_error_block("Statement Generation Failed", str(e), verbose=_verbose)
         raise typer.Exit(code=1)
 
 
 @app.command()
 def factor(
-    statement_dir: Optional[str] = typer.Option(
+    statement_dir: str | None = typer.Option(
         None, "--statement-dir", help="Statement directory"
     ),
-    output_dir: Optional[str] = typer.Option(
+    output_dir: str | None = typer.Option(
         None, "--output", "-o", help="Output directory"
     ),
-    config_path: Optional[str] = typer.Option(
+    config_path: str | None = typer.Option(
         None, "--config", "-c", help="Config YAML path"
     ),
     parallel: int = typer.Option(1, "--parallel", "-p", help="Number of parallel runs"),
@@ -385,6 +397,7 @@ def factor(
     """Generate factor code from a statement."""
     try:
         from aether.config import get_config
+        from aether.config import resolve_path
         from aether.pipeline.runner import run_factor
         from aether.pipeline.runner import run_factor_parallel
 
@@ -426,27 +439,27 @@ def factor(
             show_step_result(_pluralize(count, "factor", "factors") + " generated")
 
         total_time = time.time() - total_start
+        output_path = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "factor"
+        )
         show_summary(
             [
                 ("Total", _pluralize(total_count, "factor", "factors")),
                 ("Time", _time_summary(total_time, iter_count)),
+                ("Output", output_path),
             ]
         )
-        show_closer()
+        show_closer(elapsed=total_time)
     except typer.Exit:
         raise
     except Exception as e:
-        import traceback
-
-        show_error_block("Factor Generation Failed", str(e))
-        if _verbose:
-            traceback.print_exc()
+        show_error_block("Factor Generation Failed", str(e), verbose=_verbose)
         raise typer.Exit(code=1)
 
 
 @app.command("config")
 def show_config(
-    config_path: Optional[str] = typer.Option(
+    config_path: str | None = typer.Option(
         None, "--config", "-c", help="Config YAML path"
     ),
 ):
@@ -463,6 +476,7 @@ def show_config(
             f"{key[:8]}...{key[-4:]}" if len(key) > 12 else "***"
         )
     show_config_display(config_dict)
+    show_closer()
 
 
 def main():

@@ -1,6 +1,4 @@
 import copy
-from typing import List
-from typing import Optional
 import numpy as np
 from aether.clause.nodes.base import Node
 from aether.clause.nodes.base import NodeIOTypes
@@ -12,7 +10,7 @@ class ClauseGenerator:
     Random Clause Tree Generator
     """
 
-    def __init__(self, nodes: List[Node]):
+    def __init__(self, nodes: list[Node]):
         self.nodes = nodes
 
     def generate(self, max_depth: int):
@@ -33,7 +31,7 @@ class ClauseGenerator:
             if next_state["done"] or _iter > 20:
                 return self.tree
 
-    def reset(self, max_depth: int, tree_name: Optional[str] = "") -> dict:
+    def reset(self, max_depth: int, tree_name: str | None = "") -> dict:
         """
         Reset Clause Tree Generator
         """

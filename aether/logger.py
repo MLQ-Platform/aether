@@ -1,5 +1,5 @@
 from loguru import logger
-from aether.console import console
+from aether.display import console
 
 _sink_id = None
 _cli_mode = False

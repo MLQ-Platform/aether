@@ -1,4 +1,3 @@
-from typing import Optional
 import numpy as np
 import pandas as pd
 from aether.clause.nodes.base import Node
@@ -15,9 +14,9 @@ class DATA(Node):
         self,
         label: str,
         ticker: str,
-        provider: Optional[InMemoryDataProvider] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
+        provider: InMemoryDataProvider | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
     ):
         super(DATA, self).__init__(
             input_types=[],

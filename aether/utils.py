@@ -1,6 +1,5 @@
 import json
 import uuid
-from typing import List
 from pydantic import BaseModel
 from aether.exceptions import DataError
 from aether.logger import get_logger
@@ -8,7 +7,7 @@ from aether.logger import get_logger
 logger = get_logger(__name__)
 
 
-def add_uuid(instances: List[BaseModel]):
+def add_uuid(instances: list[BaseModel]):
     """
     Add a UUID to each instance in the list
     """

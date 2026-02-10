@@ -1,9 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict
-from typing import List
 from typing import NewType
-from typing import Optional
 import pandas as pd
 import pyarrow.parquet as pq
 
@@ -16,11 +13,11 @@ class InMemoryDataProvider:
     """
 
     # store 클래스 변수: 모든 인스턴스들이 공통 참조
-    _store: Dict[Ticker, pd.DataFrame] = {}
+    _store: dict[Ticker, pd.DataFrame] = {}
 
     def __init__(
         self,
-        data_dir: Optional[str] = "data",
+        data_dir: str | None = "data",
     ):
 
         module_dir = Path(__file__).resolve().parents[1]
@@ -31,7 +28,7 @@ class InMemoryDataProvider:
         if not InMemoryDataProvider._store:
             self.load(data_path)
 
-    def load(self, data_dir: Optional[str] = None):
+    def load(self, data_dir: str | None = None):
         """
         데이터 로드
         """
@@ -71,7 +68,7 @@ class InMemoryDataProvider:
         if key not in InMemoryDataProvider._store:
             InMemoryDataProvider._store[key] = df
 
-    def get_tickers(self) -> List[Ticker]:
+    def get_tickers(self) -> list[Ticker]:
         """
         티커 리스트 조회
         """

@@ -1,4 +1,3 @@
-from typing import Tuple
 from aether import factory
 from aether.agents.factor.schema import FactorCode
 from aether.agents.factor.schema import FactorStatement
@@ -15,7 +14,7 @@ logger = get_logger(__name__)
 def run_factor_revision(
     statement: Statement,
     config: Config = None,
-) -> Tuple[FactorStatement, FactorCode]:
+) -> tuple[FactorStatement, FactorCode]:
     """Run the factor generation pipeline: initial proof → revision loop → code generation.
 
     Returns:
@@ -88,7 +87,7 @@ def generate_factor_code(
 async def run_factor_revision_async(
     statement: Statement,
     config: Config = None,
-) -> Tuple[FactorStatement, FactorCode]:
+) -> tuple[FactorStatement, FactorCode]:
     """Async version of run_factor_revision."""
     config = config or get_config()
 
