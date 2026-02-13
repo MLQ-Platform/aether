@@ -6,7 +6,6 @@ from aether.agents.statement.schema import Statement
 from aether.config import Config
 from aether.config import get_config
 from aether.logger import get_logger
-from aether.utils import generate_uuid
 
 logger = get_logger(__name__)
 
@@ -15,11 +14,7 @@ def run_factor_revision(
     statement: Statement,
     config: Config = None,
 ) -> tuple[FactorStatement, FactorCode]:
-    """Run the factor generation pipeline: initial proof → revision loop → code generation.
-
-    Returns:
-        (factor_statement, factor_code) with UUIDs assigned.
-    """
+    """Run the factor generation pipeline: initial proof -> revision loop -> code generation."""
     config = config or get_config()
 
     logger.info("Generating initial proof")
@@ -36,7 +31,6 @@ def run_factor_revision(
             factor_statement, revision, config=config
         )
 
-    factor_statement.uuid = generate_uuid()
     logger.info("Generating factor code")
     factor_code = generate_factor_code(factor_statement, config=config)
     return factor_statement, factor_code
@@ -107,7 +101,6 @@ async def run_factor_revision_async(
             factor_statement, revision, config=config
         )
 
-    factor_statement.uuid = generate_uuid()
     logger.info("Generating factor code")
     factor_code = await generate_factor_code_async(factor_statement, config=config)
     return factor_statement, factor_code

@@ -1,19 +1,13 @@
 import asyncio
-from pydantic import BaseModel
 from aether import factory
 from aether.agents.claim.schema import Claim
-from aether.agents.claim.schema import ClaimList
 from aether.agents.rationale.agent import RationaleAgent
 from aether.agents.rationale.schema import Rationale
-from aether.agents.statement.graph import StatementGraph
-from aether.agents.statement.graph.node import Node
 from aether.agents.statement.schema import Statement
 from aether.config import Config
 from aether.config import get_config
 from aether.logger import get_logger
 from aether.provider import InMemoryDataProvider
-from aether.utils import add_uuid
-from aether.utils import generate_uuid
 
 logger = get_logger(__name__)
 
@@ -23,20 +17,21 @@ async def verify_claims_loop(
     provider: InMemoryDataProvider,
     semaphore: asyncio.Semaphore,
     config: Config = None,
-) -> tuple[list[Claim], list[BaseModel], list[tuple[str, str]]]:
+) -> tuple[list[Claim], list[dict]]:
     """Run the iterative claim verification loop.
 
     Returns:
-        (final_claims, instances, edges) where:
+        (final_claims, sequence) where:
         - final_claims: Claims that were accepted across all iterations
-        - instances: All intermediate rationales and modified claims
-        - edges: All intermediate edges for graph building
+        - sequence: Ordered timeline for persistence
+          claims -> rationales -> claims -> ... -> final claims
     """
     config = config or get_config()
-    instances = []
-    edges = []
-    final_claims = []
+    sequence: list[dict] = [
+        {"type": "claims", "items": [c.model_dump() for c in claims]}
+    ]
 
+    final_claims = []
     # Reuse agents across rounds to avoid recreating clients
     rationale_agent = factory.get_rationale_agent(config)
     modify_agent = factory.get_claim_modify_agent(config)
@@ -54,45 +49,42 @@ async def verify_claims_loop(
             config=config,
         )
 
-        rejected_rationales: list[Rationale] = [
-            x[1] for x in zip(claims, rationales) if not x[1].is_accepted
-        ]
-        rejected_claims: list[Claim] = [
-            x[0] for x in zip(claims, rationales) if not x[1].is_accepted
-        ]
-        accepted_claims: list[Claim] = [
-            x[0] for x in zip(claims, rationales) if x[1].is_accepted
-        ]
+        pairs = list(zip(claims, rationales))
+        rejected_rationales = [r for c, r in pairs if not r.is_accepted]
+        rejected_claims = [c for c, r in pairs if not r.is_accepted]
+        accepted_claims = [c for c, r in pairs if r.is_accepted]
         final_claims.extend(accepted_claims)
 
         logger.info(
             f"Accepted {len(accepted_claims)}/{len(claims)}, rejected {len(rejected_rationales)}"
         )
 
-        instances.extend(rationales)
-        edges.extend([(c.uuid, r.uuid) for c, r in zip(claims, rationales)])
+        sequence.append(
+            {
+                "type": "rationales",
+                "items": [r.model_dump() for r in rationales],
+            }
+        )
 
         if not rejected_rationales:
             logger.info("All claims accepted")
             break
 
-        logger.info(f"Modifying {len(rejected_claims)} rejected claims")
-        modified_claims = await generate_rationales_modify_async(
-            rejected_claims,
-            rejected_rationales,
-            semaphore=semaphore,
-            modify_agent=modify_agent,
-            config=config,
-        )
+        if rejected_claims:
+            logger.info(f"Modifying {len(rejected_claims)} rejected claims")
+            modified_claims = await generate_rationales_modify_async(
+                rejected_claims,
+                rejected_rationales,
+                semaphore=semaphore,
+                modify_agent=modify_agent,
+                config=config,
+            )
 
-        instances.extend(modified_claims)
-        edges.extend(
-            [(r.uuid, c.uuid) for r, c in zip(rejected_rationales, modified_claims)]
-        )
+            claims = modified_claims
 
-        claims = modified_claims
+        sequence.append({"type": "claims", "items": [c.model_dump() for c in claims]})
 
-    return final_claims, instances, edges
+    return final_claims, sequence
 
 
 async def generate_rationales_async(
@@ -119,9 +111,7 @@ async def generate_rationales_async(
             return result
 
     tasks = [limited(claim) for claim in claims]
-    rationales = await asyncio.gather(*tasks, return_exceptions=True)
-    rationales = add_uuid(rationales)
-    return rationales
+    return await asyncio.gather(*tasks)
 
 
 async def generate_rationales_modify_async(
@@ -140,9 +130,7 @@ async def generate_rationales_modify_async(
             return await modify_agent.run_async(claim, rationale.rationale)
 
     tasks = [limited(claim, rationale) for claim, rationale in zip(claims, rationales)]
-    claims: ClaimList = await asyncio.gather(*tasks, return_exceptions=True)
-    claims: list[Claim] = add_uuid(claims)
-    return claims
+    return await asyncio.gather(*tasks)
 
 
 def generate_statement(
@@ -150,44 +138,4 @@ def generate_statement(
     config: Config = None,
 ) -> Statement:
     statement_agent = factory.get_statement_agent(config)
-    statement = statement_agent.run(final_claims)
-    statement.uuid = generate_uuid()
-    return statement
-
-
-def generate_statement_graph(
-    instances: list[BaseModel],
-    edges: list[tuple[str, str]],
-) -> StatementGraph:
-    graph = StatementGraph()
-
-    for instance in instances:
-        node = Node(
-            instance=instance,
-            node_type=type(instance),
-            node_id=instance.uuid,
-        )
-        graph.add_node(node)
-
-    for edge in edges:
-        graph.add_edge(*edge)
-
-    return graph
-
-
-def get_final_claims(statement_graph: StatementGraph) -> list[Claim]:
-    final_claims = []
-
-    for node in statement_graph.nodes.values():
-        if type(node.instance) is Claim:
-            if node.edges:
-                rationale_id = node.edges[0]
-                rationale = statement_graph.nodes[rationale_id].instance
-
-                if rationale.is_accepted:
-                    final_claims.append(node.instance)
-
-            else:
-                final_claims.append(node.instance)
-
-    return final_claims
+    return statement_agent.run(final_claims)

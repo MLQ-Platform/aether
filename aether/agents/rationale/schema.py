@@ -7,8 +7,6 @@ class Rationale(BaseModel):
     Rationale
     """
 
-    uuid: int | None = None
-
     is_accepted: bool = Field(description="Whether this rationale is accepted")
 
     rationale: str = Field(

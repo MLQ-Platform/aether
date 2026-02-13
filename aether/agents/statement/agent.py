@@ -2,9 +2,9 @@ from openai import OpenAI
 from aether.agents.base import Agent
 from aether.agents.claim.schema import Claim
 from aether.agents.statement.schema import Statement
+from aether.exceptions import AgentExecutionError
 from aether.llm.prompt import load_prompt
 from aether.llm.structured import StructuredLLM
-from aether.exceptions import AgentExecutionError
 from aether.logger import get_logger
 
 logger = get_logger(__name__)

@@ -1,46 +1,28 @@
 import json
-import uuid
-from pydantic import BaseModel
+from datetime import datetime
+from secrets import token_hex
 from aether.exceptions import DataError
-from aether.logger import get_logger
-
-logger = get_logger(__name__)
 
 
-def add_uuid(instances: list[BaseModel]):
+def timestamp_ymdhms() -> str:
     """
-    Add a UUID to each instance in the list
+    Return current local time in YYYYMMDDHHMMSS.
     """
-    valid_instances = [
-        instance
-        for instance in instances
-        if instance is not None and not isinstance(instance, Exception)
-    ]
-
-    dropped = len(instances) - len(valid_instances)
-    if dropped > 0:
-        logger.warning(
-            f"add_uuid: filtered out {dropped}/{len(instances)} invalid instances"
-        )
-
-    for instance in valid_instances:
-        instance.uuid = generate_uuid()
-
-    return valid_instances
+    return datetime.now().strftime("%Y%m%d%H%M%S")
 
 
-def generate_uuid() -> int:
+def generate_id_tag(length: int = 8) -> str:
     """
-    Generate a unique UUID as integer
+    Generate a short random hex id tag.
     """
-    return int(str(uuid.uuid4())[:8], 16)
+    return token_hex(max(1, length // 2))[:length]
 
 
 def generate_task_id() -> str:
     """
     Generate a unique task ID
     """
-    return str(uuid.uuid4())[:3]
+    return token_hex(2)[:3]
 
 
 def load_json(filepath: str) -> dict:

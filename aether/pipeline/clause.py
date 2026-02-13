@@ -8,7 +8,7 @@ from aether.config import Config
 from aether.config import get_config
 from aether.exceptions import DataError
 from aether.logger import get_logger
-from aether.utils import generate_uuid
+from aether.utils import generate_id_tag
 
 logger = get_logger(__name__)
 
@@ -24,12 +24,20 @@ def generate_trees(
     num_trees = num_trees if num_trees is not None else config.clause.num_trees
 
     trees = []
+    attempts = 0
+    max_attempts = num_trees * max(1, config.clause.tree_max_iter)
 
     while len(trees) < num_trees:
+        attempts += 1
+        if attempts > max_attempts:
+            raise DataError(
+                "Failed to generate enough completed trees; "
+                f"generated {len(trees)}/{num_trees} after {max_attempts} attempts"
+            )
         tree = generator.generate(
             max_depth=max_depth, tree_max_iter=config.clause.tree_max_iter
         )
-        tree.name = str(generate_uuid())
+        tree.name = generate_id_tag()
 
         if tree.iscompleted and tree.depth == max_depth:
             trees.append(tree)

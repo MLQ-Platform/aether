@@ -1,6 +1,6 @@
 from anytree import RenderTree
 from aether.clause.nodes.base import Node
-from aether.utils import generate_uuid
+from aether.utils import generate_id_tag
 
 
 class ClauseTree:
@@ -14,7 +14,7 @@ class ClauseTree:
         self.name = name
         self.nodes = []
         self.depth = 0
-        self.tree_id = generate_uuid()
+        self.tree_id = generate_id_tag()
 
     @property
     def root(self):

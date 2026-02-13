@@ -149,7 +149,7 @@ def step_progress(label: str, iter_label: str = None):
     display = _ElapsedDisplay(display_label)
     ctx = StepContext(display)
     try:
-        with Live(display, refresh_per_second=8, console=console, transient=True):
+        with Live(display, refresh_per_second=6, console=console, transient=True):
             _active_display = display
             yield ctx
     except Exception:

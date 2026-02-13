@@ -27,7 +27,7 @@ class LLMConfig:
 
 @dataclass
 class PipelineConfig:
-    total_iterations: int = 4
+    total_iterations: int = 2
     revision_iterations: int = 3
     max_workers: int = 5
 
@@ -58,7 +58,7 @@ class DataConfig:
 
 @dataclass
 class AgentConfig:
-    react_max_iterations: int = 10
+    react_max_iterations: int = 4
     tool_timeout: int = 180
 
 

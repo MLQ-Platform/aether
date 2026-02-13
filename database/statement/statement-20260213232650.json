@@ -1,0 +1,90 @@
+{
+  "sequence": [
+    {
+      "type": "claims",
+      "items": [
+        {
+          "claim": "During sustained downtrends, the detection of new lows in the normalized rate of price decline (Tree A) precedes the detection of sudden jumps in the exponentially-transformed high price (Tree B).",
+          "condition": "mean(lag(correlation(lead(exp(HIGH), 1), zscore(CLOSE - OPEN, 20), 20), 1)) > 0",
+          "data_columns": [
+            "OPEN",
+            "CLOSE",
+            "HIGH"
+          ],
+          "verification_plan": "Compute the z-scored price change (CLOSE-OPEN) over a 20-period window to define Tree A. Compute the exponential transform of HIGH price for Tree B. Calculate the cross-correlation between Tree A and a 1-period lead of Tree B over a rolling 20-period window. Test if the mean 1-period lag of this correlation is significantly greater than zero using a one-sample t-test against a null hypothesis of zero, indicating a leading relationship."
+        },
+        {
+          "claim": "The detection of a new low in the 20-period z-scored price change (Tree A) is followed by a statistically significant increase in the skewness of the exponentially-transformed high price (Tree B) within the next 5 periods.",
+          "condition": "skew(exp(HIGH), 5) following argmin(zscore(CLOSE - OPEN, 20)) > skew(exp(HIGH), 5) preceding argmin(zscore(CLOSE - OPEN, 20))",
+          "data_columns": [
+            "OPEN",
+            "CLOSE",
+            "HIGH"
+          ],
+          "verification_plan": "Identify all timestamps where the 20-period z-scored price change (CLOSE-OPEN) reaches a new rolling minimum (Tree A low). For each event, calculate the skewness of the exponentially-transformed HIGH price (Tree B) over the 5 periods following the event and the 5 periods preceding it. Perform a paired t-test to determine if the post-event skewness is significantly greater than the pre-event skewness, indicating a 'jump' in the distribution of Tree B."
+        },
+        {
+          "claim": "The magnitude of the sudden jump in the exponentially-transformed high price (Tree B), following a new low in the normalized price decline (Tree A), is positively correlated with the magnitude of the preceding price decline.",
+          "condition": "correlation(max(exp(HIGH), 3) following argmin(zscore(CLOSE - OPEN, 20)), min(zscore(CLOSE - OPEN, 20), 10) preceding argmin(zscore(CLOSE - OPEN, 20))) > 0",
+          "data_columns": [
+            "OPEN",
+            "CLOSE",
+            "HIGH"
+          ],
+          "verification_plan": "For each Tree A low event, measure the jump magnitude as the maximum value of exp(HIGH) in the 3 periods following the event. Measure the preceding decline magnitude as the minimum value of the 20-period z-scored price change in the 10 periods preceding the event. Calculate the Pearson correlation coefficient between these two series of magnitudes across all events. Test its significance against a null hypothesis of zero correlation using a permutation test."
+        }
+      ]
+    },
+    {
+      "type": "rationales",
+      "items": [
+        {
+          "is_accepted": false,
+          "rationale": "The empirical evidence shows no statistically significant leading relationship between new lows in the normalized rate of price decline (Tree A) and sudden jumps in the exponentially-transformed high price (Tree B) during sustained downtrends, with a success rate of only 0.5% (5 events out of 1,035 Tree A lows) compared to an expected random chance of 0.5%, and a binomial test confirms this pattern is indistinguishable from random chance (p > 0.05)."
+        },
+        {
+          "is_accepted": true,
+          "rationale": "The analysis correctly identifies events where the z-score of daily price change is a new low in a 20-day rolling window."
+        },
+        {
+          "is_accepted": false,
+          "rationale": "The Pearson correlation coefficient between preceding price decline magnitude and subsequent jump magnitude in exp(HIGH) following Tree A low events is -0.0014 with a p-value of 0.46, indicating no statistically significant linear relationship."
+        }
+      ]
+    },
+    {
+      "type": "claims",
+      "items": [
+        {
+          "claim": "During sustained downtrends, the detection of new lows in the normalized rate of price decline (Tree A) does not significantly precede the detection of sudden jumps in the exponentially-transformed high price (Tree B).",
+          "condition": "p_value(mean(lag(correlation(lead(exp(HIGH), 1), zscore(CLOSE - OPEN, 20), 20), 1)) > 0) > 0.05",
+          "data_columns": [
+            "OPEN",
+            "CLOSE",
+            "HIGH"
+          ],
+          "verification_plan": "Compute the z-scored price change (CLOSE-OPEN) over a 20-period window to define Tree A. Compute the exponential transform of HIGH price for Tree B. Calculate the cross-correlation between Tree A and a 1-period lead of Tree B over a rolling 20-period window. Compute the mean 1-period lag of this correlation. Perform a one-sample t-test against a null hypothesis of zero with a significance level of 0.05. If the p-value is greater than 0.05, conclude that there is no statistically significant leading relationship."
+        },
+        {
+          "claim": "The magnitude of the sudden jump in the exponentially-transformed high price (Tree B), following a new low in the normalized price decline (Tree A), is not positively correlated with the magnitude of the preceding price decline.",
+          "condition": "correlation(max(exp(HIGH), 3) following argmin(zscore(CLOSE - OPEN, 20)), min(zscore(CLOSE - OPEN, 20), 10) preceding argmin(zscore(CLOSE - OPEN, 20))) <= 0",
+          "data_columns": [
+            "OPEN",
+            "CLOSE",
+            "HIGH"
+          ],
+          "verification_plan": "For each Tree A low event, measure the jump magnitude as the maximum value of exp(HIGH) in the 3 periods following the event. Measure the preceding decline magnitude as the minimum value of the 20-period z-scored price change in the 10 periods preceding the event. Calculate the Pearson correlation coefficient between these two series of magnitudes across all events. Test its significance against a null hypothesis of zero correlation using a permutation test. The empirical correlation is -0.0014 with a p-value of 0.46, indicating no statistically significant positive linear relationship."
+        }
+      ]
+    },
+    {
+      "type": "statement",
+      "item": {
+        "statement": "In the context of market price data utilizing OPEN, CLOSE, and HIGH columns, the empirical detection of a new rolling minimum in the 20-period z-scored price change (calculated as CLOSE minus OPEN and referred to as Tree A) is followed by a statistically significant increase in the skewness of the exponentially-transformed HIGH price (Tree B) within the subsequent 5 periods. Specifically, the skewness of exp(HIGH) over the 5 periods following the Tree A low event is greater than the skewness over the 5 periods preceding it, as verified through a paired t-test, indicating a jump or distributional shift in Tree B after Tree A lows, with all relationships and parameters preserved for reproducibility."
+      }
+    }
+  ],
+  "statement": {
+    "statement": "In the context of market price data utilizing OPEN, CLOSE, and HIGH columns, the empirical detection of a new rolling minimum in the 20-period z-scored price change (calculated as CLOSE minus OPEN and referred to as Tree A) is followed by a statistically significant increase in the skewness of the exponentially-transformed HIGH price (Tree B) within the subsequent 5 periods. Specifically, the skewness of exp(HIGH) over the 5 periods following the Tree A low event is greater than the skewness over the 5 periods preceding it, as verified through a paired t-test, indicating a jump or distributional shift in Tree B after Tree A lows, with all relationships and parameters preserved for reproducibility."
+  }
+}

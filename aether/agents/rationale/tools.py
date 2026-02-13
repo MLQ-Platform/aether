@@ -1,6 +1,12 @@
+import threading
+import warnings
 from contextlib import redirect_stdout
 from io import StringIO
 from aether.llm.react.tools.base import Tool
+
+# Lock to make redirect_stdout thread-safe across concurrent exec() calls.
+# Only the exec() portion is serialized; LLM API calls still run in parallel.
+_stdout_lock = threading.Lock()
 
 
 def pyexecutor(code: str, exec_context: dict | None = None) -> tuple[str, dict]:
@@ -31,17 +37,19 @@ def pyexecutor(code: str, exec_context: dict | None = None) -> tuple[str, dict]:
     # Reset result for each execution
     exec_context["result"] = None
 
-    # Capture stdout
-    f = StringIO()
+    buf = StringIO()
     try:
-        with redirect_stdout(f):
-            exec(code, exec_context)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with _stdout_lock:
+                with redirect_stdout(buf):
+                    exec(code, exec_context)
 
     except Exception as e:
         output = f"Error executing code: {str(e)}"
         return output, exec_context
 
-    stdout_output = f.getvalue()
+    stdout_output = buf.getvalue()
     result = exec_context.get("result", None)
 
     # Clean up intermediate variables to prevent memory accumulation

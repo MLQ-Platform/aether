@@ -1,7 +1,12 @@
+import asyncio
 import json
 import re
+from openai import APIConnectionError
+from openai import APIStatusError
+from openai import APITimeoutError
 from openai import AsyncOpenAI
 from openai import OpenAI
+from openai import RateLimitError
 from pydantic import BaseModel
 from pydantic import ValidationError
 from aether.exceptions import LLMParseError
@@ -93,6 +98,7 @@ class StructuredLLM:
 
         # 메시지 처리: 기존 시스템 메시지가 있으면 병합, 없으면 새로 생성
         full_messages = self._prepare_messages(messages, json_instruction)
+        last_content = ""
 
         for attempt in range(self.max_retries):
             try:
@@ -109,29 +115,31 @@ class StructuredLLM:
 
                 completion = self.client.chat.completions.create(**create_params)
                 content = completion.choices[0].message.content
+                last_content = content
 
                 # 마크다운 코드 블록 제거
                 json_string = self._extract_json(content)
                 data = json.loads(json_string)
                 return self.schema(**data)
 
-            except (json.JSONDecodeError, ValidationError) as e:
-                logger.info(f"Parse failed ({type(e).__name__}), retrying...")
-                if attempt < self.max_retries - 1:
-                    # Reset to initial messages instead of accumulating failed attempts
+            except Exception as e:
+                retryable = self._is_retryable_exception(e)
+                if retryable and attempt < self.max_retries - 1:
+                    logger.info(f"Retryable failure ({type(e).__name__}), retrying...")
                     full_messages = self._prepare_messages(messages, json_instruction)
 
-                    # Add error hint to the last user message
-                    full_messages[-1]["content"] += (
-                        f"\n\n[Previous attempt {attempt + 1} failed with error: {str(e)}. "
-                        f"Please ensure you output ONLY valid JSON matching the schema above.]"
-                    )
-                else:
-                    raise LLMParseError(
-                        f"Failed to generate valid structured output after {self.max_retries} attempts.\n"
-                        f"Last error: {e}\n"
-                        f"Last response: {content[:200]}..."
-                    ) from e
+                    if isinstance(e, (json.JSONDecodeError, ValidationError)):
+                        full_messages[-1]["content"] += (
+                            f"\n\n[Previous attempt {attempt + 1} failed with error: {str(e)}. "
+                            f"Please ensure you output ONLY valid JSON matching the schema above.]"
+                        )
+                    continue
+
+                raise LLMParseError(
+                    f"Failed to generate valid structured output after {self.max_retries} attempts.\n"
+                    f"Last error: {e}\n"
+                    f"Last response: {last_content[:200]}..."
+                ) from e
 
         raise RuntimeError("Unexpected error in invoke")
 
@@ -162,6 +170,7 @@ class StructuredLLM:
 
         # 메시지 처리: 기존 시스템 메시지가 있으면 병합, 없으면 새로 생성
         full_messages = self._prepare_messages(messages, json_instruction)
+        last_content = ""
 
         for attempt in range(self.max_retries):
             try:
@@ -178,30 +187,41 @@ class StructuredLLM:
 
                 completion = await self.client.chat.completions.create(**create_params)
                 content = completion.choices[0].message.content
+                last_content = content
 
                 # 마크다운 코드 블록 제거
                 json_string = self._extract_json(content)
                 data = json.loads(json_string)
                 return self.schema(**data)
 
-            except (json.JSONDecodeError, ValidationError) as e:
-                logger.info(f"Parse failed ({type(e).__name__}), retrying...")
-                if attempt < self.max_retries - 1:
-                    # Reset to initial messages instead of accumulating failed attempts
+            except Exception as e:
+                retryable = self._is_retryable_exception(e)
+                if retryable and attempt < self.max_retries - 1:
+                    logger.info(f"Retryable failure ({type(e).__name__}), retrying...")
                     full_messages = self._prepare_messages(messages, json_instruction)
-                    # Add error hint to the last user message
-                    full_messages[-1]["content"] += (
-                        f"\n\n[Previous attempt {attempt + 1} failed with error: {str(e)}. "
-                        f"Please ensure you output ONLY valid JSON matching the schema above.]"
-                    )
-                else:
-                    raise LLMParseError(
-                        f"Failed to generate valid structured output after {self.max_retries} attempts.\n"
-                        f"Last error: {e}\n"
-                        f"Last response: {content[:200]}..."
-                    ) from e
+                    if isinstance(e, (json.JSONDecodeError, ValidationError)):
+                        full_messages[-1]["content"] += (
+                            f"\n\n[Previous attempt {attempt + 1} failed with error: {str(e)}. "
+                            f"Please ensure you output ONLY valid JSON matching the schema above.]"
+                        )
+                    continue
+
+                raise LLMParseError(
+                    f"Failed to generate valid structured output after {self.max_retries} attempts.\n"
+                    f"Last error: {e}\n"
+                    f"Last response: {last_content[:200]}..."
+                ) from e
 
         raise RuntimeError("Unexpected error in invoke_async")
+
+    def _is_retryable_exception(self, err: Exception) -> bool:
+        if isinstance(err, (json.JSONDecodeError, ValidationError)):
+            return True
+        if isinstance(err, (APIConnectionError, APITimeoutError, RateLimitError)):
+            return True
+        if isinstance(err, (TimeoutError, asyncio.TimeoutError)):
+            return True
+        return False
 
     def _extract_json(self, text: str) -> str:
         """
