@@ -103,9 +103,7 @@ async def generate_rationales_async(
     async def limited(claim):
         nonlocal completed
         async with semaphore:
-            result = await rationale_agent.run_async(
-                claim, exec_context=exec_context.copy()
-            )
+            result = await rationale_agent.run_async(claim, exec_context=exec_context)
             completed += 1
             logger.info(f"Claim verified {completed}/{len(claims)}")
             return result

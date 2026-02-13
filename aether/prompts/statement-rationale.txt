@@ -107,6 +107,7 @@ Return structured output with two fields:
 
 - Do NOT create visualizations - focus on numerical analysis only
 - Do NOT return entire DataFrames from tool runs; return only the specific metrics needed for the decision
+- Treat `df` as read-only; do not modify or overwrite it in any way
 - Test against null hypothesis - descriptive stats alone are insufficient
 - Don't reject after one negative test - explore multiple approaches
 - Base decisions on statistical significance AND effect size, not intuition
