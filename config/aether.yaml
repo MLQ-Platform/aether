@@ -2,15 +2,15 @@
 # All values shown are defaults. Uncomment and modify as needed.
 
 llm:
-  model: "deepseek/deepseek-v3.2-exp"
+  model: "deepseek/deepseek-r1-0528:free"
   base_url: "https://openrouter.ai/api/v1"
   # api_key: set via OPENROUTER_API_KEY env var or config/.env
   timeout: 120.0
   max_retries: 3
 
 pipeline:
-  total_iterations: 1
-  revision_iterations: 3
+  total_iterations: 4
+  revision_iterations: 2
   max_workers: 5
 
 clause:
@@ -18,7 +18,7 @@ clause:
   max_depth: 3
   period: 10
   num_edges: 500
-  max_iterations: 100000000
+  max_iterations: 10000
   tree_max_iter: 20
   restart_prob: 0.1
   length_factor: 2.0
@@ -29,10 +29,23 @@ clause:
 
 data:
   ticker: "BTCUSDT"
-  end_date: "2025-01-01"
+  start_date: "2025-01-01"
+  end_date: "2025-07-01"
   data_dir: "data"
   database_dir: "database"
 
 agent:
-  react_max_iterations: 3
-  tool_timeout: 180
+  react_max_iterations: 5
+tool_timeout: 90
+
+backtest:
+  start_date: "2025-03-01"
+  end_date: "2027-01-01"
+  alpha_horizon: 6
+  alpha_window: 20
+  ewm_alpha: 0.5
+  min_tickers: 6
+  min_cap: 0.02
+  max_cap: 1.0
+  initial_margin: 100.0
+  fee: 0.0005

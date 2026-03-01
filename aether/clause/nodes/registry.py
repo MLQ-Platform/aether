@@ -7,8 +7,15 @@ from aether.provider import InMemoryDataProvider
 def get_nodes(provider: InMemoryDataProvider, config: Config = None) -> list:
     config = config or get_config()
     P = config.clause.period
+    START_DATE = config.data.start_date
     END_DATE = config.data.end_date
     TICKER = config.data.ticker
+    DATA_KWARGS = {
+        "ticker": TICKER,
+        "provider": provider,
+        "start_date": START_DATE,
+        "end_date": END_DATE,
+    }
 
     NODES = [
         # Basic math operation nodes
@@ -45,81 +52,55 @@ def get_nodes(provider: InMemoryDataProvider, config: Config = None) -> list:
         # Data nodes
         nodes.DATA(
             label="OPEN",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="HIGH",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="LOW",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="CLOSE",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="VOLUME",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="PREMIUM_INDEX_CLOSE",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="PREMIUM_INDEX_OPEN",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="PREMIUM_INDEX_HIGH",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="PREMIUM_INDEX_LOW",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="TAKER_BUY_VOLUME",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="TAKER_SELL_VOLUME",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="FUNDING_SCORE",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
         nodes.DATA(
             label="ORDER_FLOW_IMBALANCE",
-            ticker=TICKER,
-            provider=provider,
-            end_date=END_DATE,
+            **DATA_KWARGS,
         ),
     ]
 

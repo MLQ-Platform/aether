@@ -70,7 +70,7 @@ For each claim, you must provide:
 - IMPORTANT: Each claim must have a concrete condition expression that can be verified programmatically.
 - IMPORTANT: Avoid subjective language (optimism, fear, sentiment) unless grounded in measurable proxies.
 - IMPORTANT: Claims together must form a complete logical chain supporting the thesis.
+- IMPORTANT: The decomposed atomic claims should ideally be between 4 or 5 or 6.
 
 # Available Data Columns
 <<DATA_DESCRIPTIONS>>
-

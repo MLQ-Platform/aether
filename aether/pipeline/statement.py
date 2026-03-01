@@ -94,10 +94,16 @@ async def generate_rationales_async(
     rationale_agent: RationaleAgent | None = None,
     config: Config = None,
 ) -> list[Rationale]:
+
     config = config or get_config()
     if rationale_agent is None:
         rationale_agent = factory.get_rationale_agent(config)
-    exec_context = {"df": provider.get(config.data.ticker)}
+
+    df = provider.get(config.data.ticker)
+    if config.data.start_date or config.data.end_date:
+        df = df.loc[config.data.start_date : config.data.end_date]
+
+    exec_context = {"df": df}
     completed = 0
 
     async def limited(claim):

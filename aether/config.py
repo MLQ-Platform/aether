@@ -51,6 +51,7 @@ class ClauseConfig:
 @dataclass
 class DataConfig:
     ticker: str = "BTCUSDT"
+    start_date: str | None = None
     end_date: str = "2025-01-01"
     data_dir: str = "data"
     database_dir: str = "database"
@@ -63,12 +64,27 @@ class AgentConfig:
 
 
 @dataclass
+class BacktestConfig:
+    start_date: str = "2025-03-01"
+    end_date: str = "2027-01-01"
+    alpha_horizon: int = 6
+    alpha_window: int = 20
+    ewm_alpha: float = 0.5
+    min_tickers: int = 6
+    min_cap: float = 0.02
+    max_cap: float = 1.0
+    initial_margin: float = 100.0
+    fee: float = 0.0
+
+
+@dataclass
 class Config:
     llm: LLMConfig = field(default_factory=LLMConfig)
     pipeline: PipelineConfig = field(default_factory=PipelineConfig)
     clause: ClauseConfig = field(default_factory=ClauseConfig)
     data: DataConfig = field(default_factory=DataConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
+    backtest: BacktestConfig = field(default_factory=BacktestConfig)
 
     def __post_init__(self):
         import os
@@ -95,6 +111,7 @@ class Config:
             clause=ClauseConfig(**data.get("clause", {})),
             data=DataConfig(**data.get("data", {})),
             agent=AgentConfig(**data.get("agent", {})),
+            backtest=BacktestConfig(**data.get("backtest", {})),
         )
 
 
@@ -103,8 +120,13 @@ _config: Config | None = None
 
 def get_config(path: str | None = None) -> Config:
     global _config
+    # Explicit path should always reload config from that file and refresh cache.
+    if path is not None:
+        _config = Config.from_yaml(path)
+        return _config
+
     if _config is None:
-        _config = Config.from_yaml(path) if path else Config.from_yaml()
+        _config = Config.from_yaml()
     return _config
 
 

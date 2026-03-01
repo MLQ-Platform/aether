@@ -23,79 +23,79 @@ from aether.pipeline.thesis import generate_thesis
 from aether.pipeline.thesis import generate_thesis_async
 from aether.utils import load_json
 from aether.utils import save_json
-from aether.utils import timestamp_ymdhms
+from aether.utils import uuid_savepath
 
 logger = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+def _parse_claims_payload(payload) -> list[Claim]:
+    data = payload
+    if isinstance(data, dict):
+        if "claims" in data and isinstance(data["claims"], list):
+            data = data["claims"]
+        elif all(isinstance(v, dict) for v in data.values()):
+            data = list(data.values())
+    return [Claim(**c) for c in data]
 
 
-def _timestamped_savepath(basedir: str, prefix: str) -> str:
-    base = f"{prefix}-{timestamp_ymdhms()}"
-    path = os.path.join(basedir, f"{base}.json")
-    idx = 1
-    while os.path.exists(path):
-        path = os.path.join(basedir, f"{base}-{idx:02d}.json")
-        idx += 1
-    return path
-
-
-def sample_thesis(thesis_load_basedir: str) -> Thesis:
+def sample_thesis(thesis_load_basedir: str) -> tuple[Thesis, str]:
     files = [f for f in os.listdir(thesis_load_basedir) if f.endswith(".json")]
     if not files:
         raise DataError(f"No thesis JSON files found in {thesis_load_basedir}")
     filepath = os.path.join(thesis_load_basedir, random.choice(files))
     thesis_dict = load_json(filepath)
     thesis = Thesis(**thesis_dict)
-    return thesis
+    return thesis, os.path.basename(filepath)
 
 
-def sample_claims(claim_load_basedir: str) -> list[Claim]:
+def sample_claims(claim_load_basedir: str) -> tuple[list[Claim], str]:
     files = [f for f in os.listdir(claim_load_basedir) if f.endswith(".json")]
     if not files:
         raise DataError(f"No claim JSON files found in {claim_load_basedir}")
     filepath = os.path.join(claim_load_basedir, random.choice(files))
-    return [Claim(**c) for c in load_json(filepath)]
+    claims = _parse_claims_payload(load_json(filepath))
+    return claims, os.path.basename(filepath)
 
 
-def sample_statement(statement_load_basedir: str) -> Statement:
+def sample_statement(statement_load_basedir: str) -> tuple[Statement, str]:
     files = [f for f in os.listdir(statement_load_basedir) if f.endswith(".json")]
     if not files:
         raise DataError(f"No statement JSON files found in {statement_load_basedir}")
     filepath = os.path.join(statement_load_basedir, random.choice(files))
     statement_data = load_json(filepath)
-    return Statement(statement=statement_data["statement"]["statement"])
+    return Statement(
+        statement=statement_data["statement"]["statement"]
+    ), os.path.basename(filepath)
 
 
-def load_all_theses(thesis_load_basedir: str) -> list[Thesis]:
+def load_all_theses(thesis_load_basedir: str) -> list[tuple[Thesis, str]]:
     files = sorted(f for f in os.listdir(thesis_load_basedir) if f.endswith(".json"))
-    theses = []
+    theses: list[tuple[Thesis, str]] = []
     for f in files:
         filepath = os.path.join(thesis_load_basedir, f)
         thesis_dict = load_json(filepath)
-        theses.append(Thesis(**thesis_dict))
+        theses.append((Thesis(**thesis_dict), f))
     return theses
 
 
-def load_all_claim_sets(claim_load_basedir: str) -> list[list[Claim]]:
+def load_all_claim_sets(claim_load_basedir: str) -> list[tuple[list[Claim], str]]:
     files = sorted(f for f in os.listdir(claim_load_basedir) if f.endswith(".json"))
-    claim_sets = []
+    claim_sets: list[tuple[list[Claim], str]] = []
     for f in files:
         filepath = os.path.join(claim_load_basedir, f)
-        claim_sets.append([Claim(**c) for c in load_json(filepath)])
+        claim_sets.append((_parse_claims_payload(load_json(filepath)), f))
     return claim_sets
 
 
-def load_all_statements(statement_load_basedir: str) -> list[Statement]:
+def load_all_statements(statement_load_basedir: str) -> list[tuple[Statement, str]]:
     files = sorted(f for f in os.listdir(statement_load_basedir) if f.endswith(".json"))
-    statements = []
+    statements: list[tuple[Statement, str]] = []
     for f in files:
         filepath = os.path.join(statement_load_basedir, f)
         statement_data = load_json(filepath)
-        statements.append(Statement(statement=statement_data["statement"]["statement"]))
+        statements.append(
+            (Statement(statement=statement_data["statement"]["statement"]), f)
+        )
     return statements
 
 
@@ -144,7 +144,7 @@ def run_thesis(
     logger.info(f"Thesis generated: {thesis.thesis[:100]}...")
 
     os.makedirs(thesis_save_basedir, exist_ok=True)
-    savepath = _timestamped_savepath(thesis_save_basedir, "thesis")
+    savepath = uuid_savepath(thesis_save_basedir, "thesis")
     save_json(thesis.model_dump(), savepath)
     return thesis
 
@@ -182,7 +182,7 @@ async def run_thesis_parallel(
     os.makedirs(thesis_save_basedir, exist_ok=True)
 
     for thesis in theses:
-        savepath = _timestamped_savepath(thesis_save_basedir, "thesis")
+        savepath = uuid_savepath(thesis_save_basedir, "thesis")
         save_json(thesis.model_dump(), savepath)
         logger.info(f"Thesis saved: {savepath}")
 
@@ -203,13 +203,17 @@ def run_claim(
     thesis_load_basedir = thesis_load_basedir or os.path.join(db_dir, "thesis")
     claim_save_basedir = claim_save_basedir or os.path.join(db_dir, "claim")
 
-    thesis = sample_thesis(thesis_load_basedir)
+    thesis, thesis_file = sample_thesis(thesis_load_basedir)
     claims = generate_claims(thesis, config=config)
     logger.info(f"{len(claims)} claims generated")
 
     os.makedirs(claim_save_basedir, exist_ok=True)
-    savepath = _timestamped_savepath(claim_save_basedir, "claim")
-    save_json([c.model_dump() for c in claims], savepath)
+    savepath = uuid_savepath(claim_save_basedir, "claim")
+    claim_record = {
+        "source_file": thesis_file,
+        "claims": [c.model_dump() for c in claims],
+    }
+    save_json(claim_record, savepath)
     return claims
 
 
@@ -229,21 +233,25 @@ async def run_claim_parallel(
     logger.info(f"Processing {len(theses)} theses in parallel")
     completed = 0
 
-    async def gen_one(thesis):
+    async def gen_one(thesis_record):
         nonlocal completed
+        thesis, thesis_file = thesis_record
         async with semaphore:
-            result = thesis, await generate_claims_async(thesis, config=config)
+            result = thesis_file, await generate_claims_async(thesis, config=config)
             completed += 1
             logger.info(f"Parallel claim {completed}/{len(theses)} done")
             return result
 
     results = await asyncio.gather(*[gen_one(t) for t in theses])
-
     os.makedirs(claim_save_basedir, exist_ok=True)
 
-    for thesis, claims in results:
-        savepath = _timestamped_savepath(claim_save_basedir, "claim")
-        save_json([c.model_dump() for c in claims], savepath)
+    for thesis_file, claims in results:
+        savepath = uuid_savepath(claim_save_basedir, "claim")
+        claim_record = {
+            "source_file": thesis_file,
+            "claims": [c.model_dump() for c in claims],
+        }
+        save_json(claim_record, savepath)
         logger.info(f"Claims saved: {savepath}")
 
     return results
@@ -266,7 +274,7 @@ async def run_statement(
     semaphore = asyncio.Semaphore(config.pipeline.max_workers)
     provider = factory.get_provider()
 
-    claims = sample_claims(claim_load_basedir)
+    claims, claim_file = sample_claims(claim_load_basedir)
     logger.info(f"{len(claims)} claims loaded")
 
     try:
@@ -277,10 +285,14 @@ async def run_statement(
         statement = generate_statement(final_claims, config=config)
         logger.info("Statement generated")
         sequence.append({"type": "statement", "item": statement.model_dump()})
-        statement_record = {"sequence": sequence, "statement": statement.model_dump()}
+        statement_record = {
+            "sequence": sequence,
+            "statement": statement.model_dump(),
+            "source_file": claim_file,
+        }
 
         os.makedirs(statement_save_basedir, exist_ok=True)
-        savepath = _timestamped_savepath(statement_save_basedir, "statement")
+        savepath = uuid_savepath(statement_save_basedir, "statement")
         save_json(statement_record, savepath)
         logger.info(f"Statement record saved to {savepath}")
 
@@ -296,6 +308,7 @@ async def run_statement(
 
 async def _process_one_statement(
     claims: list[Claim],
+    source_claim_file: str | None,
     provider,
     semaphore: asyncio.Semaphore,
     statement_save_basedir: str,
@@ -315,9 +328,13 @@ async def _process_one_statement(
         else:
             logger.info("Statement generated")
         sequence.append({"type": "statement", "item": statement.model_dump()})
-        statement_record = {"sequence": sequence, "statement": statement.model_dump()}
+        statement_record = {
+            "sequence": sequence,
+            "statement": statement.model_dump(),
+            "source_file": source_claim_file,
+        }
 
-        savepath = _timestamped_savepath(statement_save_basedir, "statement")
+        savepath = uuid_savepath(statement_save_basedir, "statement")
         save_json(statement_record, savepath)
         logger.info(f"Statement record saved to {savepath}")
 
@@ -351,6 +368,7 @@ async def run_statement_parallel(
             *[
                 _process_one_statement(
                     claims,
+                    source_claim_file,
                     provider,
                     semaphore,
                     statement_save_basedir,
@@ -358,7 +376,7 @@ async def run_statement_parallel(
                     counter=counter,
                     total=len(claim_sets),
                 )
-                for claims in claim_sets
+                for claims, source_claim_file in claim_sets
             ]
         )
     finally:
@@ -381,12 +399,16 @@ def run_factor(
     statement_load_basedir = statement_load_basedir or os.path.join(db_dir, "statement")
     factor_save_basedir = factor_save_basedir or os.path.join(db_dir, "factor")
 
-    statement = sample_statement(statement_load_basedir)
+    statement, statement_file = sample_statement(statement_load_basedir)
     factor_statement, factor_code = run_factor_revision(statement, config=config)
-    factor_dict = {**factor_statement.model_dump(), **factor_code.model_dump()}
+    factor_dict = {
+        **factor_statement.model_dump(),
+        **factor_code.model_dump(),
+        "source_file": statement_file,
+    }
 
     os.makedirs(factor_save_basedir, exist_ok=True)
-    savepath = _timestamped_savepath(factor_save_basedir, "factor")
+    savepath = uuid_savepath(factor_save_basedir, "factor")
     save_json(factor_dict, savepath)
     logger.info(f"Factor saved to {savepath}")
     return factor_code
@@ -408,22 +430,54 @@ async def run_factor_parallel(
     logger.info(f"Processing {len(statements)} statements in parallel")
     completed = 0
 
-    async def gen_one(statement):
+    async def gen_one(statement_record):
         nonlocal completed
+        statement, statement_file = statement_record
         async with semaphore:
             result = await run_factor_revision_async(statement, config=config)
             completed += 1
             logger.info(f"Parallel factor {completed}/{len(statements)} done")
-            return result
+            return statement_file, result
 
     results = await asyncio.gather(*[gen_one(s) for s in statements])
 
     os.makedirs(factor_save_basedir, exist_ok=True)
 
-    for factor_statement, factor_code in results:
-        factor_dict = {**factor_statement.model_dump(), **factor_code.model_dump()}
-        savepath = _timestamped_savepath(factor_save_basedir, "factor")
+    for statement_file, (factor_statement, factor_code) in results:
+        factor_dict = {
+            **factor_statement.model_dump(),
+            **factor_code.model_dump(),
+            "source_file": statement_file,
+        }
+        savepath = uuid_savepath(factor_save_basedir, "factor")
         save_json(factor_dict, savepath)
         logger.info(f"Factor saved to {savepath}")
 
     return results
+
+
+# ---------------------------------------------------------------------------
+# Backtest
+# ---------------------------------------------------------------------------
+
+
+def run_backtest_batch(
+    factor_dir: str | None = None,
+    backtest_save_basedir: str | None = None,
+):
+    config = get_config()
+    db_dir = resolve_path(config.data.database_dir)
+    factor_dir = factor_dir or os.path.join(db_dir, "factor")
+    backtest_save_basedir = backtest_save_basedir or os.path.join(db_dir, "backtest")
+
+    from aether.pipeline.backtest import run_batch_factor_backtests
+
+    summary = run_batch_factor_backtests(
+        factor_dir=factor_dir,
+        backtest_dir=backtest_save_basedir,
+    )
+    logger.info(
+        "Backtest batch done: "
+        f"processed={summary['processed']}, skipped={summary['skipped_existing']}, failed={summary['failed']}"
+    )
+    return summary

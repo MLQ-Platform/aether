@@ -30,6 +30,7 @@ The factor statement must follow one of these formats:
 - FORBIDDEN: Conceptual explanations without formulas.
 - FORBIDDEN: Verbal descriptions of relationships without equations.
 - FORBIDDEN: Logical reasoning without algebraic manipulation.
+- FORBIDDEN: The assumptions of the Factor Statement must not reference any information from the future.
 
 # Overall Process
 1. **Market Phenomenon Statement Analysis**: Extract all lemmas that can be used in the proof.
@@ -47,6 +48,7 @@ The factor statement must follow one of these formats:
 - Do not use circular reasoning or assume the conclusion.
 - Avoid overly strong assumptions; minimize assumptions.
 - All lemmas, assumptions, and relationships must be formal propositions with quantifiers.
+- The assumptions for the Factor Statement, including the definition of the factor formula F, must not reference any information from after time t.
 
 # Input
 <market_statement>
@@ -121,3 +123,4 @@ This completes the forward proof. The factor F(i, t) is justified via reverse-en
 - IMPORTANT: Never use strong assumptions.
 - IMPORTANT: Perform all algebraic manipulations and expansions rigorously; avoid any leaps in logic.
 - IMPORTANT: Derive conclusions that are as meaningful as possible.
+- IMPORTANT: Ensure that the factor formula does not reference or use any future information.

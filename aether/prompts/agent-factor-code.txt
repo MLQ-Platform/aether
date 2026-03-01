@@ -37,6 +37,11 @@ Given a factor statement proof, extract the factor formula specification and imp
    - Factor calculates values for each rolling window across the entire timeframe
    - Returns a pd.Series where each index position corresponds to the factor value for that window
 
+6. **No Lookahead**
+   - No references to future data (no "future-looking" or "peeking" at subsequent timestamps)
+   - When you use pandas shift, do not move future data into the current timestamp; all calculations must be based solely on current and past data.
+
+
 # Implementation Process
 
 1. **Extract Factor Formula**
@@ -103,4 +108,4 @@ def factor(data: pd.DataFrame, params: dict = {}) -> pd.Series:
 - IMPORTANT: The returned pd.Series must be assigned to a variable named 'result' before returning
 - IMPORTANT: Ensure all column names match exactly with DATA_DESCRIPTIONS
 - IMPORTANT: Keep implementation compact and readable
-
+- IMPORTANT: Never reference future data beyond time t when computing the factor value at time t. 

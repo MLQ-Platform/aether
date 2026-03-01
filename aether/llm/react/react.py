@@ -1,6 +1,7 @@
 import asyncio
 import atexit
 from concurrent.futures import ThreadPoolExecutor
+from openai import BadRequestError
 from aether.llm.react.tools.adapter import ToolCallAdapter
 from aether.llm.react.tools.base import Tool
 from aether.logger import get_logger
@@ -56,44 +57,60 @@ class ReactAgent:
         # ReAct Loop
         for iteration in range(self.max_iterations):
             logger.info(f"ReAct iteration {iteration + 1}/{self.max_iterations}")
-
-            # 1. LLM Tool Calling 호출
-            response = self.adapter.call_with_tools(
-                messages=messages,
-                tools=self.api_tools,
-                tool_choice="required",
-                **kwargs,
-            )
-
-            # 2. Tool Call 확인 (비정상 케이스)
-            if not self.adapter.has_tool_calls(response):
-                logger.warning(f"[Task {task_id}] No tool call")
-                continue
-
-            # 3. Tool Call 추출 및 실행
-            tool_calls = self.adapter.extract_tool_calls(response)
-            # Tool call 시 LLM의 추론 과정(content) 확인 및 출력
-            reasoning = self.adapter.get_final_content(response)
-            logger.debug(
-                f"[Task {task_id}] Reasoning: {reasoning}",
-            )
-            logger.info(f"Executing {len(tool_calls)} tool(s)")
-
-            tool_call = tool_calls[0]
-            tool_name = tool_call["name"]
-            tool_args = tool_call["arguments"]
-
+            tool_call = None
+            reasoning = ""
+            result = None
             try:
+                # 1. LLM Tool Calling 호출
+                response = self.adapter.call_with_tools(
+                    messages=messages,
+                    tools=self.api_tools,
+                    tool_choice="required",
+                    **kwargs,
+                )
+
+                # 2. Tool Call 확인 (비정상 케이스)
+                if not self.adapter.has_tool_calls(response):
+                    logger.warning(f"[Task {task_id}] No tool call")
+                    continue
+
+                # 3. Tool Call 추출 및 실행
+                tool_calls = self.adapter.extract_tool_calls(response)
+                if not tool_calls:
+                    logger.warning(f"[Task {task_id}] No tool call")
+                    continue
+
+                reasoning = self.adapter.get_final_content(response)
+                logger.debug(
+                    f"[Task {task_id}] Reasoning: {reasoning}",
+                )
+                logger.info(f"Executing {len(tool_calls)} tool(s)")
+
+                tool_call = tool_calls[0]
+                tool_name = tool_call["name"]
+                tool_args = tool_call["arguments"]
                 tool = self.tools[tool_name]
                 result = str(tool.func(**tool_args))
-                logger.info(f"Tool {tool_name} completed")
+                logger.info(f"Tool {tool_name} completed. Messages: {len(messages)}")
 
+            # Context Length Overflow
+            except BadRequestError as e:
+                messages.pop()
+                logger.error(f"[Task {task_id}] BadRequest during ReAct loop: {e}")
+                break
+
+            # Other Errors
             except Exception as e:
+                if tool_call is None:
+                    logger.warning(f"[Task {task_id}] ReAct loop failed: {str(e)}")
+                    continue
+                tool_name = tool_call["name"]
                 result = f"Error executing tool {tool_name}: {str(e)}"
                 logger.warning(f"[Task {task_id}] Tool {tool_name} failed: {str(e)}")
 
-            # 결과를 메시지에 추가 (reasoning 포함)
-            self.adapter.format_tool_result(tool_call, result, messages, reasoning)
+            if tool_call is not None and result is not None:
+                # 결과를 메시지에 추가 (reasoning 포함)
+                self.adapter.format_tool_result(tool_call, result, messages, reasoning)
 
         # 최종 답변 요청 메시지 추가
         messages.append(
@@ -149,35 +166,38 @@ class ReactAgent:
         # ReAct Loop
         for iteration in range(self.max_iterations):
             logger.info(f"ReAct iteration {iteration + 1}/{self.max_iterations}")
-
-            # 1. LLM Tool Calling 호출 (async)
-            response = await self.adapter.call_with_tools(
-                messages=messages,
-                tools=self.api_tools,
-                tool_choice="required",
-                **kwargs,
-            )
-
-            # 2. Tool Call 확인 (비정상 케이스)
-            if not self.adapter.has_tool_calls(response):
-                logger.warning(f"[Task {task_id}] No tool call")
-                continue
-
-            # 3. Tool Call 추출 및 실행
-            tool_calls = self.adapter.extract_tool_calls(response)
-            # Tool call 시 LLM의 추론 과정(content) 확인 및 출력
-            reasoning = self.adapter.get_final_content(response)
-
-            logger.debug(
-                f"[Task {task_id}] Reasoning: {reasoning}",
-            )
-            logger.info(f"Executing {len(tool_calls)} tool(s)")
-
-            tool_call = tool_calls[0]
-            tool_name = tool_call["name"]
-            tool_args = tool_call["arguments"]
-
+            tool_call = None
+            reasoning = ""
+            result = None
             try:
+                # 1. LLM Tool Calling 호출 (async)
+                response = await self.adapter.call_with_tools(
+                    messages=messages,
+                    tools=self.api_tools,
+                    tool_choice="required",
+                    **kwargs,
+                )
+
+                # 2. Tool Call 확인 (비정상 케이스)
+                if not self.adapter.has_tool_calls(response):
+                    logger.warning(f"[Task {task_id}] No tool call")
+                    continue
+
+                # 3. Tool Call 추출 및 실행
+                tool_calls = self.adapter.extract_tool_calls(response)
+                if not tool_calls:
+                    logger.warning(f"[Task {task_id}] No tool call")
+                    continue
+
+                reasoning = self.adapter.get_final_content(response)
+                logger.debug(
+                    f"[Task {task_id}] Reasoning: {reasoning}",
+                )
+                logger.info(f"Executing {len(tool_calls)} tool(s)")
+
+                tool_call = tool_calls[0]
+                tool_name = tool_call["name"]
+                tool_args = tool_call["arguments"]
                 tool = self.tools[tool_name]
 
                 def run_tool():
@@ -193,25 +213,43 @@ class ReactAgent:
 
                 result, exec_context = tool_result
                 result = str(result)
-                logger.info(f"Tool {tool_name} completed")
+                logger.info(f"Tool {tool_name} completed. Messages: {len(messages)}")
 
+            # Context Length Overflow
+            except BadRequestError as e:
+                messages.pop()
+                logger.error(f"[Task {task_id}] BadRequest during ReAct loop: {e}")
+                break
+            # Timeout
             except asyncio.TimeoutError:
+                if tool_call is None:
+                    logger.warning(
+                        f"[Task {task_id}] ReAct loop timed out before tool execution"
+                    )
+                    continue
+                tool_name = tool_call["name"]
                 result = f"Error: Tool '{tool_name}' execution exceeded {self.tool_timeout} seconds timeout."
                 logger.error(
                     f"[Task {task_id}] Tool {tool_name} timed out after {self.tool_timeout}s"
                 )
+            # Other Errors
             except Exception as e:
+                if tool_call is None:
+                    logger.warning(f"[Task {task_id}] ReAct loop failed: {str(e)}")
+                    continue
+                tool_name = tool_call["name"]
                 result = f"Error executing tool {tool_name}: {str(e)}"
                 logger.warning(f"[Task {task_id}] Tool {tool_name} failed: {str(e)}")
 
-            # 결과를 메시지에 추가 (reasoning 포함)
-            self.adapter.format_tool_result(tool_call, result, messages, reasoning)
+            if tool_call is not None and result is not None:
+                # 결과를 메시지에 추가 (reasoning 포함)
+                self.adapter.format_tool_result(tool_call, result, messages, reasoning)
 
         # 최종 답변 요청 메시지 추가
         messages.append(
             {
                 "role": "user",
-                "content": "Provide your final answer based on the information gathered so far.",
+                "content": "Conclude your final answer based on the information gathered so far.",
             }
         )
 

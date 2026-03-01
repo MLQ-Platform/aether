@@ -66,6 +66,19 @@ class TestConfig:
         assert config1 is config2
         assert config1.llm.model == "test-model"
 
+    def test_get_config_reload_on_explicit_path(self, tmp_path):
+        config_a = tmp_path / "a.yaml"
+        config_b = tmp_path / "b.yaml"
+        config_a.write_text(yaml.dump({"llm": {"model": "model-a"}}))
+        config_b.write_text(yaml.dump({"llm": {"model": "model-b"}}))
+
+        loaded_a = get_config(str(config_a))
+        loaded_b = get_config(str(config_b))
+
+        assert loaded_a.llm.model == "model-a"
+        assert loaded_b.llm.model == "model-b"
+        assert loaded_a is not loaded_b
+
     def test_nested_dataclass_structure(self):
         config = Config()
         assert isinstance(config.llm, LLMConfig)

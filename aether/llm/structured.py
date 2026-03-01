@@ -2,7 +2,6 @@ import asyncio
 import json
 import re
 from openai import APIConnectionError
-from openai import APIStatusError
 from openai import APITimeoutError
 from openai import AsyncOpenAI
 from openai import OpenAI
@@ -47,7 +46,7 @@ class StructuredLLM:
         model: str,
         client: OpenAI | AsyncOpenAI,
         schema: type[BaseModel],
-        temperature: float = 0.0,
+        temperature: float = 0.7,
         max_tokens: int | None = None,
         max_retries: int = 3,
         **kwargs,

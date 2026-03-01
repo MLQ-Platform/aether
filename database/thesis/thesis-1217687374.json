@@ -1,4 +1,0 @@
-{
-  "uuid": 1217687374,
-  "thesis": "During periods of extreme premium index compression, the detection of a new low in the normalized maximum premium (Tree A) tends to coincide with a cross-down event where the skewness of the maximum premium falls below the normalized minimum premium (Tree B). This relationship exists because a new low in the sigmoid-transformed maximum signals a breakdown from a previously established high-premium regime, while the cross-down of skewness below the minimum's z-score captures the simultaneous shift in the distribution's asymmetry toward extreme negative values, indicating a collapse in bullish premium sentiment. Consequently, this co-occurrence reveals a market dynamic where the exhaustion of premium highs triggers a rapid, sentiment-driven reversal, often preceding a sustained period of premium mean reversion or bearish price action."
-}

@@ -1,4 +1,0 @@
-{
-  "uuid": 1816262188,
-  "thesis": "During periods of significant price drawdowns, the market exhibits a heightened sensitivity to volatility and premium index dynamics, where a 10% drawdown in the smoothed price trend triggers a condition where the absolute high price volatility exceeds the normalized, sigmoid-transformed percentage change in a low premium index. This relationship suggests that sharp price declines amplify the market's focus on extreme price movements relative to underlying premium stability, revealing a regime where fear-driven volatility spikes decouple from fundamental index behavior, often preceding a capitulation phase or a volatility compression before a trend reversal."
-}

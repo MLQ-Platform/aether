@@ -1,4 +1,0 @@
-{
-  "uuid": 159900004,
-  "thesis": "In volatile or trending market regimes, jumps detected in exponentially transformed closing prices show significant dependency with jumps in sigmoid-smoothed high prices. This relationship arises because exponential amplification highlights breakout moments in closes, while sigmoid normalization on highs captures sustained upward momentum, suggesting both indicators react to the same underlying price acceleration. Consequently, this reveals a pattern where sharp closing price movements frequently validate and lead to new high levels, signaling strong trend persistence."
-}

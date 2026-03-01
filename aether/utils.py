@@ -1,4 +1,6 @@
 import json
+import os
+import uuid
 from datetime import datetime
 from secrets import token_hex
 from aether.exceptions import DataError
@@ -23,6 +25,14 @@ def generate_task_id() -> str:
     Generate a unique task ID
     """
     return token_hex(2)[:3]
+
+
+def uuid_savepath(basedir: str, prefix: str) -> str:
+    while True:
+        base = f"{prefix}-{uuid.uuid4().hex[:8]}"
+        path = os.path.join(basedir, f"{base}.json")
+        if not os.path.exists(path):
+            return path
 
 
 def load_json(filepath: str) -> dict:

@@ -23,19 +23,11 @@ Provides detailed explanations of what each node computes and its financial mean
 
 # Hypothesis Generation Principles
 
-1. Ground in Data: The hypothesis must explain WHY these two indicators show statistical dependency
+1. Ground in Data: The hypothesis explain WHY these two indicators show statistical dependency
 2. Causal Mechanism: Propose a plausible market mechanism that connects them
-3. Testable Claims: Make specific, verifiable predictions about market behavior
+3. Testable Hypothesis: Make specific, verifiable predictions about market behavior
 4. Market Phenomenon: Focus on explaining the underlying market dynamics and patterns
 5. Parsimony: Keep it concise (3-5 sentences) but substantive
-
-# Requirements
-
-IMPORTANT: Your thesis must include all four components:
-- Context: What market condition or regime is being described?
-- Relationship: How do the two indicators relate to each other?
-- Mechanism: Why does this relationship exist? What market forces drive it?
-- Implication: What does this reveal about market dynamics or expected price behavior?
 
 Avoid:
 - Overly technical jargon without explanation
@@ -43,18 +35,9 @@ Avoid:
 - Vague or untestable claims
 - Redundant descriptions of the indicator calculations
 
-# Output Format
-
-IMPORTANT: You MUST output a single coherent paragraph (3-5 sentences).
-IMPORTANT: The paragraph must follow this exact structure:
-1. Opens with the market context or condition
-2. Describes the relationship between the indicators
-3. Explains the underlying mechanism
-4. Concludes with the expected market behavior or phenomenon
-
 Output format:
 <thesis>
-Your generated market hypothesis here.
+Your generated market hypothesis here. You MUST output a single coherent paragraph (3-5 sentences).
 </thesis>
 
 # Input Example

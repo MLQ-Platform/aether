@@ -4,11 +4,11 @@ import time
 from dataclasses import asdict
 import typer
 from aether.display import show_closer
+from aether.display import show_cli_banner
 from aether.display import show_config_display
 from aether.display import show_error_block
 from aether.display import show_header
 from aether.display import show_run_plan
-from aether.display import show_system_info
 from aether.display import show_step_result
 from aether.display import show_summary
 from aether.display import step_progress
@@ -17,6 +17,7 @@ app = typer.Typer(
     name="aether",
     help="AETHER - Data-driven Hypothesis Generation Engine",
     add_completion=False,
+    invoke_without_command=True,
 )
 
 _verbose = False
@@ -33,6 +34,7 @@ def _version_callback(value: bool):
 
 @app.callback()
 def callback(
+    ctx: typer.Context,
     version: bool = typer.Option(
         None,
         "--version",
@@ -47,6 +49,11 @@ def callback(
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompts"),
 ):
     """AETHER - Data-driven Hypothesis Generation Engine"""
+    if ctx.invoked_subcommand is None and not version:
+        show_cli_banner()
+        typer.echo(ctx.get_help())
+        raise typer.Exit(code=0)
+
     global _verbose, _skip_confirm
     _verbose = verbose
     _skip_confirm = yes
@@ -97,9 +104,16 @@ def clause(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        show_system_info(config)
+        save_dir = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "clause"
+        )
 
-        if not show_run_plan("Clause Generation", skip_confirm=_skip_confirm):
+        if not show_run_plan(
+            "Clause Generation",
+            config=config,
+            output_path=save_dir,
+            skip_confirm=_skip_confirm,
+        ):
             show_closer("Cancelled")
             raise typer.Exit(code=0)
 
@@ -115,9 +129,6 @@ def clause(
             f"{clause_graph.num_nodes} nodes, {clause_graph.num_edges} edges"
         )
 
-        save_dir = output_dir or os.path.join(
-            resolve_path(config.data.database_dir), "clause"
-        )
         os.makedirs(save_dir, exist_ok=True)
         clause_graph.save(os.path.join(save_dir, f"clause-{version}.json"))
 
@@ -163,10 +174,17 @@ def thesis(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        show_system_info(config)
+        output_path = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "thesis"
+        )
 
         if not show_run_plan(
-            "Thesis Generation", parallel, iter_count, skip_confirm=_skip_confirm
+            "Thesis Generation",
+            parallel,
+            iter_count,
+            config=config,
+            output_path=output_path,
+            skip_confirm=_skip_confirm,
         ):
             show_closer("Cancelled")
             raise typer.Exit(code=0)
@@ -201,9 +219,6 @@ def thesis(
             show_step_result(_pluralize(count, "thesis", "theses") + " generated")
 
         total_time = time.time() - total_start
-        output_path = output_dir or os.path.join(
-            resolve_path(config.data.database_dir), "thesis"
-        )
         show_summary(
             [
                 ("Total", _pluralize(total_count, "thesis", "theses")),
@@ -242,10 +257,17 @@ def claim(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        show_system_info(config)
+        output_path = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "claim"
+        )
 
         if not show_run_plan(
-            "Claim Decomposition", parallel, iter_count, skip_confirm=_skip_confirm
+            "Claim Decomposition",
+            parallel,
+            iter_count,
+            config=config,
+            output_path=output_path,
+            skip_confirm=_skip_confirm,
         ):
             show_closer("Cancelled")
             raise typer.Exit(code=0)
@@ -280,9 +302,6 @@ def claim(
             )
 
         total_time = time.time() - total_start
-        output_path = output_dir or os.path.join(
-            resolve_path(config.data.database_dir), "claim"
-        )
         show_summary(
             [
                 ("Total", _pluralize(total_count, "claim set", "claim sets")),
@@ -319,10 +338,17 @@ def statement(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        show_system_info(config)
+        output_path = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "statement"
+        )
 
         if not show_run_plan(
-            "Statement Synthesis", parallel, iter_count, skip_confirm=_skip_confirm
+            "Statement Synthesis",
+            parallel,
+            iter_count,
+            config=config,
+            output_path=output_path,
+            skip_confirm=_skip_confirm,
         ):
             show_closer("Cancelled")
             raise typer.Exit(code=0)
@@ -362,9 +388,6 @@ def statement(
             )
 
         total_time = time.time() - total_start
-        output_path = output_dir or os.path.join(
-            resolve_path(config.data.database_dir), "statement"
-        )
         show_summary(
             [
                 ("Total", _pluralize(total_count, "statement", "statements")),
@@ -403,10 +426,17 @@ def factor(
 
         config = get_config(config_path)
         show_header(model=config.llm.model, ticker=config.data.ticker)
-        show_system_info(config)
+        output_path = output_dir or os.path.join(
+            resolve_path(config.data.database_dir), "factor"
+        )
 
         if not show_run_plan(
-            "Factor Generation", parallel, iter_count, skip_confirm=_skip_confirm
+            "Factor Generation",
+            parallel,
+            iter_count,
+            config=config,
+            output_path=output_path,
+            skip_confirm=_skip_confirm,
         ):
             show_closer("Cancelled")
             raise typer.Exit(code=0)
@@ -439,9 +469,6 @@ def factor(
             show_step_result(_pluralize(count, "factor", "factors") + " generated")
 
         total_time = time.time() - total_start
-        output_path = output_dir or os.path.join(
-            resolve_path(config.data.database_dir), "factor"
-        )
         show_summary(
             [
                 ("Total", _pluralize(total_count, "factor", "factors")),
@@ -454,6 +481,69 @@ def factor(
         raise
     except Exception as e:
         show_error_block("Factor Generation Failed", str(e), verbose=_verbose)
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def backtest(
+    factor_dir: str | None = typer.Option(
+        None, "--factor-dir", help="Factor directory (JSON files)"
+    ),
+    output_dir: str | None = typer.Option(
+        None, "--output", "-o", help="Backtest output directory"
+    ),
+    config_path: str | None = typer.Option(
+        None, "--config", "-c", help="Config YAML path"
+    ),
+):
+    """Backtest all factor JSON files and save metric/plot per factor."""
+    try:
+        from aether.config import get_config
+        from aether.config import resolve_path
+        from aether.pipeline.runner import run_backtest_batch
+
+        config = get_config(config_path)
+        show_header(model=config.llm.model, ticker=config.data.ticker)
+
+        db_dir = resolve_path(config.data.database_dir)
+        factor_path = factor_dir or os.path.join(db_dir, "factor")
+        output_path = output_dir or os.path.join(db_dir, "backtest")
+
+        if not show_run_plan(
+            "Backtest Batch",
+            config=config,
+            output_path=output_path,
+            skip_confirm=_skip_confirm,
+        ):
+            show_closer("Cancelled")
+            raise typer.Exit(code=0)
+
+        total_start = time.time()
+        with step_progress("Running factor backtests"):
+            summary = run_backtest_batch(
+                factor_dir=factor_path,
+                backtest_save_basedir=output_path,
+            )
+
+        total_time = time.time() - total_start
+        show_step_result(
+            f"processed={summary['processed']}, skipped={summary['skipped_existing']}, failed={summary['failed']}"
+        )
+        show_summary(
+            [
+                ("Total factors", str(summary["total"])),
+                ("Processed", str(summary["processed"])),
+                ("Skipped(existing)", str(summary["skipped_existing"])),
+                ("Failed", str(summary["failed"])),
+                ("Time", f"{total_time:.1f}s"),
+                ("Output", output_path),
+            ]
+        )
+        show_closer(elapsed=total_time)
+    except typer.Exit:
+        raise
+    except Exception as e:
+        show_error_block("Backtest Batch Failed", str(e), verbose=_verbose)
         raise typer.Exit(code=1)
 
 

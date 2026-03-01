@@ -12,11 +12,14 @@ from rich.theme import Theme
 console = Console(
     theme=Theme(
         {
-            "info": "cyan",
+            "info": "bright_cyan",
             "success": "bold green",
             "warning": "bold yellow",
             "error": "bold red",
-            "dim": "dim white",
+            "dim": "grey70",
+            "primary": "bold bright_cyan",
+            "accent": "bright_blue",
+            "border": "grey54",
         }
     ),
     highlight=False,
@@ -40,13 +43,29 @@ def show_header(**context):
     """
     console.print()
     console.print(
-        f" [bold blue]┌[/bold blue]  [bold]AETHER[/bold] [dim]v{VERSION}[/dim]"
+        f" [accent]┌[/accent]  [bold white]AETHER[/bold white] [dim]v{VERSION}[/dim]"
     )
     console.print(f" {BAR}")
     if context:
         for key, value in context.items():
             console.print(f" {BAR}  [cyan]{key:<8}[/cyan] {value}")
         console.print(f" {BAR}")
+
+
+def show_cli_banner():
+    """Display stylized AETHER banner for top-level CLI invocation."""
+    banner_lines = [
+        " █████╗ ███████╗████████╗██╗  ██╗███████╗██████╗ ",
+        "██╔══██╗██╔════╝╚══██╔══╝██║  ██║██╔════╝██╔══██╗",
+        "███████║█████╗     ██║   ███████║█████╗  ██████╔╝",
+        "██╔══██║██╔══╝     ██║   ██╔══██║██╔══╝  ██╔══██╗",
+        "██║  ██║███████╗   ██║   ██║  ██║███████╗██║  ██║",
+        "╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝",
+    ]
+    console.print()
+    for line in banner_lines:
+        console.print(f" [primary]{line}[/primary]")
+    console.print()
 
 
 def show_system_info(config):
@@ -70,17 +89,41 @@ def show_run_plan(
     stage: str,
     parallel: int = 1,
     iter_count: int = 1,
+    config=None,
+    output_path: str | None = None,
     skip_confirm: bool = False,
 ) -> bool:
     """Display run plan and confirmation prompt. Returns True to proceed, False to cancel."""
     total = parallel * iter_count
-    console.print(f" [bold blue]◇[/bold blue]  [bold]{stage}[/bold]")
-    if parallel > 1:
-        console.print(f" {BAR}  [cyan]parallel[/cyan]  {parallel}")
-    if iter_count > 1:
-        console.print(f" {BAR}  [cyan]iter[/cyan]      {iter_count}")
-    if total > 1:
-        console.print(f" {BAR}  [cyan]total[/cyan]     {total}")
+    console.print(f" [accent]◇[/accent]  [bold]{stage}[/bold]")
+
+    rows: list[tuple[str, str]] = [
+        ("parallel", str(parallel)),
+        ("iter", str(iter_count)),
+        ("total", str(total)),
+    ]
+    if config is not None:
+        date_range = (
+            f"{config.data.start_date or '-'} -> {config.data.end_date or '-'}"
+        )
+        rows = [
+            ("model", str(config.llm.model)),
+            ("ticker", str(config.data.ticker)),
+            ("date", date_range),
+            ("workers", str(config.pipeline.max_workers)),
+            ("timeout", f"{config.llm.timeout}s"),
+            ("parallel", str(parallel)),
+            ("iter", str(iter_count)),
+            ("total", str(total)),
+            ("output", output_path or "-"),
+        ]
+
+    content = "\n".join([f" [cyan]{k:<9}[/cyan] {v}" for k, v in rows])
+    panel = Panel(content, title="Run Snapshot", border_style="border", expand=False)
+    with console.capture() as cap:
+        console.print(panel)
+    for line in cap.get().rstrip("\n").split("\n"):
+        console.print(f" {BAR}  {line}")
     console.print(f" {BAR}")
 
     if skip_confirm:
@@ -110,7 +153,9 @@ class _ElapsedDisplay:
     def __rich_console__(self, console, options):
         elapsed = self.elapsed
         suffix = f"  [dim]{self._sub_text}[/dim]" if self._sub_text else ""
-        text = Text.from_markup(f"  {self._label}{suffix}  [dim]{elapsed:.1f}s[/dim]")
+        text = Text.from_markup(
+            f"  [primary]{self._label}[/primary]{suffix}  [dim]{elapsed:.1f}s[/dim]"
+        )
         self._spinner.update(text=text)
         yield self._spinner
 
@@ -160,7 +205,7 @@ def step_progress(label: str, iter_label: str = None):
     finally:
         _active_display = None
     console.print(
-        f" [bold blue]◆[/bold blue]  {display_label}  [dim]{display.elapsed:.1f}s[/dim]"
+        f" [accent]◆[/accent]  {display_label}  [dim]{display.elapsed:.1f}s[/dim]"
     )
     for d in ctx._details:
         console.print(f" {BAR}  [dim]{d}[/dim]")
@@ -169,7 +214,7 @@ def step_progress(label: str, iter_label: str = None):
 
 def show_step_result(text: str):
     """Display a single result line after a step completes. e.g. '✓ 2 theses generated'"""
-    console.print(f" {BAR}  [green]✓[/green] {text}")
+    console.print(f" {BAR}  [success]✓[/success] {text}")
 
 
 def show_summary(lines: list[tuple[str, str]]):
@@ -186,7 +231,7 @@ def show_summary(lines: list[tuple[str, str]]):
             parts.append(f"  [cyan]{k:<8}[/cyan] {v}")
     content = "\n".join(parts)
     panel = Panel(
-        content, title="Summary", border_style="dim", expand=False, padding=(0, 1)
+        content, title="[primary]Summary[/primary]", border_style="border", expand=False, padding=(0, 1)
     )
 
     with console.capture() as capture:

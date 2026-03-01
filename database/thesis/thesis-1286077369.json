@@ -1,4 +1,0 @@
-{
-  "uuid": 1286077369,
-  "thesis": "During periods of significant shifts in buying pressure, the detection of new extremes in transformed taker buy volume signals reveals a market dynamic where momentum precedes a reversal. The statistical dependency between new lows in lagged, standardized volume and new highs in exponentially-scaled percentage changes suggests that after a sustained period of high buying activity, a sharp pullback in volume (a new low) often coincides with a subsequent surge in the rate of volume growth (a new high). This occurs because aggressive buying exhausts short-term demand, causing a temporary volume lull that, when followed by renewed aggressive buying, creates a powerful momentum signal indicative of a potential trend acceleration or breakout."
-}
