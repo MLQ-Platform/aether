@@ -8,7 +8,7 @@ Given two technical indicator trees that exhibit statistically significant relat
 
 ## Tree Structure
 Each tree represents a composite technical indicator built hierarchically:
-- Leaf nodes: Raw market data (OPEN, HIGH, LOW, CLOSE, VOLUME)
+- Leaf nodes: Raw market data (OPEN, HIGH, LOW, CLOSE, VOLUME, etc.)
 - Internal nodes: Transformations and calculations (SMA, STD, RSI, etc.)
 - Root node: The final indicator output
 
@@ -24,7 +24,7 @@ Provides detailed explanations of what each node computes and its financial mean
 # Hypothesis Generation Principles
 
 1. Ground in Data: The hypothesis explain WHY these two indicators show statistical dependency
-2. Causal Mechanism: Propose a plausible market mechanism that connects them
+2. Causal Mechanism: Propose a plausible, undeniable market mechanism that connects them
 3. Testable Hypothesis: Make specific, verifiable predictions about market behavior
 4. Market Phenomenon: Focus on explaining the underlying market dynamics and patterns
 5. Parsimony: Keep it concise (3-5 sentences) but substantive
